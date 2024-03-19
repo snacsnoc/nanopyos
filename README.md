@@ -15,11 +15,15 @@ cd build
 ```
 export PREFIX=/PATH/build/toolchain
 export TARGET=aarch64-none-elf
+```
 ## Linux
+```
 export CC=/usr/local/bin/gcc-12
 export CXX=/usr/local/bin/g++-12
 export LD=/usr/local/bin/gcc-12
+```
 ## Mac
+```
 export CC=/opt/homebrew/bin/gcc-12
 export CXX=/opt/homebrew/bin/g++-12
 export LD=/opt/homebrew/bin/gcc-12
@@ -48,7 +52,7 @@ cd newlib
 make
 make install
 ```
-# note: this installs to $PREFIX/$TARGET
+note: this installs to `$PREFIX/$TARGET`
 
 ## get gcc source
 
