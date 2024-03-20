@@ -3,7 +3,7 @@
  */
 #ifndef __STDIO_H__
 #define __STDIO_H__
-#include <sys/reent.h>
+#include "sys/reent.h"
 #define EOF (-1)
 
 #ifndef NULL
