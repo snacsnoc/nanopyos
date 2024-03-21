@@ -25,7 +25,7 @@
  */
 
 #include <stdint.h>
-
+#include "sys/types.h"
 // Options to control how MicroPython is built
 
 // Use the minimal starting configuration (disables all optional features).
@@ -43,8 +43,7 @@
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_FLOAT)
 #define MICROPY_WARNINGS            (1)
-#define MICROPY_ERROR_REPORTING                 (MICROPY_ERROR_REPORTING_NONE)
-
+#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_NONE)
 
 // Need to provide a declaration/definition of alloca()
 #include <alloca.h>
