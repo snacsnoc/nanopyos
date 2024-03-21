@@ -9,7 +9,7 @@ Reset_Handler:
     mov sp, x0
 
     // Copy .data section from flash to RAM
-    ldr x1, =_sidata   // Start of .data in flash
+   // ldr x1, =_sidata   // Start of .data in flash
     ldr x2, =_sdata    // Start of .data in RAM
     ldr x3, =_edata    // End of .data in RAM
 copy_loop:
@@ -31,7 +31,7 @@ zero_loop:
     b zero_loop
 zero_done:
 
-    bl bare_main       // Branch to bare_main function
+    bl main       // Branch to main function
 
     // Infinite loop
 infinite_loop:
