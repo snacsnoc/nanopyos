@@ -33,7 +33,7 @@ endif
 LDFLAGS += -nostdlib -T linker-mpy.ld --gc-sections
 
 # Define the required source files.
-SRC_C += $(TOP)/ports/bare-arm/lib.c $(TOP)/ports/bare-arm/main.c $(TOP)/ports/bare-arm/system.c src/video.c
+SRC_C += $(TOP)/ports/bare-arm/lib.c $(TOP)/ports/bare-arm/main.c $(TOP)/ports/bare-arm/system.c
 
 # Define assembly source files
 SRC_ASM += startup.s
