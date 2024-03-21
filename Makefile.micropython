@@ -23,7 +23,8 @@ CSUPEROPT = -Os
 
 # Select debugging or optimization build.
 ifeq ($(DEBUG), 1)
-CFLAGS += -Og
+CFLAGS += -Og -g
+LDFLAGS += -g
 else
 CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
@@ -67,6 +68,9 @@ $(BUILD)/firmware.dfu: $(BUILD)/firmware.bin
 deploy: $(BUILD)/firmware.dfu
 	$(Q)$(PYTHON) $(PYDFU) -u $^
 
+debug: $(BUILD)/firmware.elf
+	qemu-system-aarch64 -M virt -cpu cortex-a53 -kernel $< -S -s &
+	aarch64-elf-gdb $< -ex "target remote localhost:1234"
 
 
 # Include remaining core make rules.
