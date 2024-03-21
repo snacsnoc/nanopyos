@@ -126,7 +126,10 @@ LDFLAGS="-L/$PREFIX/aarch64-elf/lib"  CC=aarch64-elf-gcc make V=1
 
 ```
 
-
+## booting:
+```bash
+qemu-system-aarch64 -M virt -kernel kernel.img -display none -serial stdio
+```
 
 # cpython
 
