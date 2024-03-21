@@ -45,11 +45,6 @@
 #define MICROPY_WARNINGS            (1)
 #define MICROPY_ERROR_REPORTING                 (MICROPY_ERROR_REPORTING_NONE)
 
-// Type definitions for the specific machine
-
-typedef int64_t mp_int_t; // must be pointer size
-typedef uint64_t mp_uint_t; // must be pointer size
-typedef long mp_off_t;
 
 // Need to provide a declaration/definition of alloca()
 #include <alloca.h>
