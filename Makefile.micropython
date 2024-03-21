@@ -17,7 +17,7 @@ DFU ?= $(TOP)/tools/dfu.py
 PYDFU ?= $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
-CFLAGS += -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD) -Isrc/include
+CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD)
 CFLAGS += -Wall -Werror -std=c99 -nostdlib
 CSUPEROPT = -Os
 
@@ -35,12 +35,19 @@ LDFLAGS += -nostdlib -T linker-mpy.ld --gc-sections
 # Define the required source files.
 SRC_C += $(TOP)/ports/bare-arm/lib.c $(TOP)/ports/bare-arm/main.c $(TOP)/ports/bare-arm/system.c src/video.c
 
+# Define assembly source files
+SRC_ASM += startup.s
+
 # Define the required object files.
 OBJ += $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+OBJ += $(SRC_ASM:.s=.o)
 
 # Define the top-level target, the main firmware.
 all: $(BUILD)/firmware.dfu
+
+%.o: %.s
+	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
@@ -59,6 +66,8 @@ $(BUILD)/firmware.dfu: $(BUILD)/firmware.bin
 
 deploy: $(BUILD)/firmware.dfu
 	$(Q)$(PYTHON) $(PYDFU) -u $^
+
+
 
 # Include remaining core make rules.
 include $(TOP)/py/mkrules.mk
