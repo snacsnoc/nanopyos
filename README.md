@@ -50,17 +50,7 @@ make install
 
 
 
-# Build newlib 
 
-```bash
-wget ftp://sourceware.org/pub/newlib/newlib-4.4.0.20231231.tar.gz
-tar xvf newlib
-cd newlib
-./configure --prefix=$PREFIX --target=$TARGET --host=$TARGET
-make
-make install
-```
-Note: this installs to `$PREFIX/$TARGET`
 
 ## Get gcc source
 
@@ -103,16 +93,29 @@ make all-gcc
 make install-gcc
 make all-target-libgcc
 make install-target-libgcc
-
-
 ```
+
+# Build newlib
+
+```bash
+wget ftp://sourceware.org/pub/newlib/newlib-4.4.0.20231231.tar.gz
+tar xvf newlib
+cd newlib
+./configure --prefix=$PREFIX --target=$TARGET --disable-multilib
+make
+make install
+```
+Note: this installs to `$PREFIX/$TARGET`
+
 # Building Python Interpreter
 
 
 
 # MicroPython
 Clone the MicroPython repository:
+
 ```bash
+mkdir test-build && test-build
 git clone https://github.com/micropython/micropython.git
 ```
 
