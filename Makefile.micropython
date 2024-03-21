@@ -37,18 +37,18 @@ LDFLAGS += -nostdlib -T linker-mpy.ld --gc-sections
 SRC_C += $(TOP)/ports/bare-arm/lib.c $(TOP)/ports/bare-arm/main.c $(TOP)/ports/bare-arm/system.c
 
 # Define assembly source files
-SRC_ASM += startup.s
+SRC_ASM += startup.S
 
 # Define the required object files.
 OBJ += $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
-OBJ += $(SRC_ASM:.s=.o)
+OBJ += $(SRC_ASM:.S=.o)
 
 # Define the top-level target, the main firmware.
 all: $(BUILD)/firmware.dfu
 
-%.o: %.s
-	$(CC) -c $(CFLAGS) $< -o $@
+startup.o: startup.S
+	$(CC) $(CFLAGS) -c startup.S -o startup.o
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
