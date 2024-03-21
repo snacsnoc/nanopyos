@@ -130,6 +130,15 @@ LDFLAGS="-L/$PREFIX/aarch64-elf/lib"  CC=aarch64-elf-gcc make V=1
 ```bash
 qemu-system-aarch64 -M virt -kernel kernel.img -display none -serial stdio
 ```
+## debugging:
+```
+qemu-system-aarch64 -M virt -cpu cortex-a72 -kernel kernel.img -nographic -s -S
+
+#attach gdb:
+aarch64-elf-gdb build/firmware.elf
+(gdb) target remote localhost:1234
+
+```
 
 # cpython
 
