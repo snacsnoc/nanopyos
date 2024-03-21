@@ -1,6 +1,6 @@
 # TODO: fix clean behaviour
 # TOP directory points to the micropython directory
-TOP := build/micropython
+TOP := test-build/micropython
 
 # Include the core environment definitions; this will set $(TOP).
 include $(TOP)/py/mkenv.mk
@@ -17,7 +17,7 @@ DFU ?= $(TOP)/tools/dfu.py
 PYDFU ?= $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
-CFLAGS += -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD) -I$(PREFIX)/toolchain/aarch64-elf/include
+CFLAGS += -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD) -Isrc/include
 CFLAGS += -Wall -Werror -std=c99 -nostdlib
 CSUPEROPT = -Os
 
