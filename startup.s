@@ -8,15 +8,15 @@ Reset_Handler:
     ldr x0, =_estack
     mov sp, x0
 
-    /* Copy .data section from flash to RAM */
-    ldr x1, =_sidata
-    ldr x2, =_sdata
-    ldr x3, =_edata
+    // Copy .data section from flash to RAM
+    ldr x1, =_sidata   // Start of .data in flash
+    ldr x2, =_sdata    // Start of .data in RAM
+    ldr x3, =_edata    // End of .data in RAM
 copy_loop:
     cmp x2, x3
-    b.cc copy_done
-    ldrb w0, [x1], #1
-    strb w0, [x2], #1
+    b.hs copy_done
+    ldrb w4, [x1], #1  // Use w4 to avoid "expected an integer" error
+    strb w4, [x2], #1
     b copy_loop
 copy_done:
 
@@ -25,15 +25,16 @@ copy_done:
     ldr x3, =_ebss
 zero_loop:
     cmp x2, x3
-    b.cc zero_done
-    mov w0, #0
-    strb w0, [x2], #1
+    b.hs zero_done
+    mov w4, #0         // Zero out w4 register
+    strb w4, [x2], #1
     b zero_loop
 zero_done:
 
-    /* Call main application code or further initialization here */
-    bl bare_main
+    bl bare_main       // Branch to bare_main function
 
-    /* If main returns, enter an infinite loop */
+    // Infinite loop
 infinite_loop:
+    wfi                // Wait for interrupt
     b infinite_loop
+
