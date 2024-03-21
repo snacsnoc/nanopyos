@@ -95,7 +95,7 @@ make all-target-libgcc
 make install-target-libgcc
 ```
 
-# Build newlib
+## Build newlib
 
 ```bash
 wget ftp://sourceware.org/pub/newlib/newlib-4.4.0.20231231.tar.gz
