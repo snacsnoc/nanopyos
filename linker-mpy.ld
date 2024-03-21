@@ -1,9 +1,11 @@
-/*  linker script for micropython build */
+/* Linker script for micropython build */
 
 MEMORY
 {
     RAM (rwx) : ORIGIN = 0x80000000, LENGTH = 128M
 }
+
+ENTRY(_start)
 
 SECTIONS
 {
@@ -46,6 +48,11 @@ SECTIONS
         . += 64K;
         _estack = .;
         . = ALIGN(16);
+    } > RAM
+
+    /* Set _heap_start to current location */
+    .heap_start : {
+        _heap_start = .;
     } > RAM
 
     /* Provide _estack symbol for the startup code */
