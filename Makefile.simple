@@ -57,5 +57,3 @@ $(TARGET).bin: $(TARGET).elf
 
 clean:
 	rm -rf $(BUILD_DIR)
-
-# Debugging target (assuming you want to run
