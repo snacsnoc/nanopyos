@@ -120,26 +120,28 @@ git clone https://github.com/micropython/micropython.git
 ```
 
 See `Makefile.micropython`
-Then: make -f Makefile.micropython
-```bash
-LDFLAGS="-L/$PREFIX/aarch64-elf/lib"  CC=aarch64-elf-gcc make V=1
+Then: 
+`make -f Makefile.micropython all V=1`
 
-```
 
 ## booting:
 ```bash
-qemu-system-aarch64 -M virt -kernel kernel.img -display none -serial stdio
+qemu-system-aarch64 -M virt,virtualization=off -cpu cortex-a57 -kernel build/firmware.elf -nographic -d unimp,int
 ```
 ## debugging:
 ```
-qemu-system-aarch64 -M virt -cpu cortex-a72 -kernel kernel.img -nographic -s -S
+qemu-system-aarch64 -M virt,virtualization=off -cpu cortex-a57 -kernel build/firmware.elf -nographic -d unimp,int -s -S
 
 #attach gdb:
 aarch64-elf-gdb build/firmware.elf
 (gdb) target remote localhost:1234
 
 ```
+Simple test build:
+`make -f Makefile.simple`
 
+Boot with:
+`qemu-system-aarch64 -nographic -machine virt,virtualization=off -d unimp,int -cpu cortex-a57 -kernel simple-build/firmware.elf`
 # cpython
 
 See `Makefile`
