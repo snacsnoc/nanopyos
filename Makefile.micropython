@@ -13,22 +13,36 @@ MICROPY_ROM_TEXT_COMPRESSION ?= 0
 
 # Define toolchain and other tools.
 CROSS_COMPILE ?= aarch64-elf-
+CC := $(CROSS_COMPILE)gcc
+AS := $(CROSS_COMPILE)as
+LD := $(CROSS_COMPILE)ld
+OBJCOPY := $(CROSS_COMPILE)objcopy
+SIZE := $(CROSS_COMPILE)size
+
+
+# Set the architecture-specific flags
+ARCH_FLAGS := -march=armv8-a
 DFU ?= $(TOP)/tools/dfu.py
 PYDFU ?= $(TOP)/tools/pydfu.py
 
+ASFLAGS := $(ARCH_FLAGS)
+
 # Set CFLAGS.
 CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD)
-CFLAGS += -Wall -Werror -std=c99 -nostdlib
-CSUPEROPT = -Os
+CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
+#CSUPEROPT = -Os
 
 # Select debugging or optimization build.
 ifeq ($(DEBUG), 1)
-CFLAGS += -Og -g
+CFLAGS += -O0 -g -ffreestanding -mgeneral-regs-only
 LDFLAGS += -g
 else
 CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 endif
+
+CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib -ffreestanding -O0 -mgeneral-regs-only
+
 
 # Set linker flags.
 LDFLAGS += -nostdlib -T linker-mpy.ld --gc-sections
@@ -45,10 +59,11 @@ OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(SRC_ASM:.S=.o)
 
 # Define the top-level target, the main firmware.
-all: $(BUILD)/firmware.dfu
+all: $(BUILD)/firmware.bin
 
 startup.o: startup.S
-	$(CC) $(CFLAGS) -c startup.S -o startup.o
+	$(AS) $(ASFLAGS) startup.S -o startup.o
+
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
