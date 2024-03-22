@@ -1,0 +1,61 @@
+# Define toolchain
+CROSS_COMPILE ?= aarch64-elf-
+CC := $(CROSS_COMPILE)gcc
+AS := $(CROSS_COMPILE)as
+LD := $(CROSS_COMPILE)ld
+OBJCOPY := $(CROSS_COMPILE)objcopy
+SIZE := $(CROSS_COMPILE)size
+
+# Set the architecture-specific flags
+ARCH_FLAGS := -march=armv8-a
+
+# Compiler and linker flags
+CFLAGS := $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib -ffreestanding -O0 -mgeneral-regs-only
+ASFLAGS := $(ARCH_FLAGS)
+LDFLAGS := -nostdlib -T linker-mpy.ld --gc-sections
+
+# Source directories
+SRC_DIR := test-build/micropython/ports/bare-arm
+
+# Source files
+SRC_C := $(SRC_DIR)/main.c $(SRC_DIR)/system.c
+SRC_ASM := startup.S
+
+# Build directory
+BUILD_DIR := simple-build
+
+# Object files
+OBJ_C := $(SRC_C:%.c=$(BUILD_DIR)/%.o)
+OBJ_ASM := $(SRC_ASM:%.S=$(BUILD_DIR)/%.o)
+OBJ := $(OBJ_C) $(OBJ_ASM)
+
+# Output binary
+TARGET := $(BUILD_DIR)/firmware
+
+.PHONY: all clean
+
+all: $(TARGET).bin
+
+# Create build directories
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(dir $(OBJ_C))
+	@mkdir -p $(dir $(OBJ_ASM))
+
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: %.S | $(BUILD_DIR)
+	$(AS) $(ASFLAGS) $< -o $@
+
+$(TARGET).elf: $(OBJ)
+	$(LD) $(LDFLAGS) -o $@ $^
+	$(SIZE) $@
+
+$(TARGET).bin: $(TARGET).elf
+	$(OBJCOPY) -O binary $< $@
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+# Debugging target (assuming you want to run
