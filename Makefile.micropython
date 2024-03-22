@@ -25,8 +25,6 @@ ARCH_FLAGS := -march=armv8-a
 DFU ?= $(TOP)/tools/dfu.py
 PYDFU ?= $(TOP)/tools/pydfu.py
 
-ASFLAGS := $(ARCH_FLAGS)
-
 # Set CFLAGS.
 CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD)
 CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
@@ -34,18 +32,17 @@ CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
 
 # Select debugging or optimization build.
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -g -ffreestanding -mgeneral-regs-only
-LDFLAGS += -g
+CFLAGS += -O0 -ffreestanding -mgeneral-regs-only
 else
 CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
-CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib -ffreestanding -O0 -mgeneral-regs-only
-
 
 # Set linker flags.
 LDFLAGS += -nostdlib -T linker-mpy.ld --gc-sections
+
+ASFLAGS := $(ARCH_FLAGS)
 
 # Define the required source files.
 SRC_C += $(TOP)/ports/bare-arm/lib.c $(TOP)/ports/bare-arm/main.c $(TOP)/ports/bare-arm/system.c
@@ -58,12 +55,15 @@ OBJ += $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(SRC_ASM:.S=.o)
 
+
+.PHONY: all clean
+
 # Define the top-level target, the main firmware.
 all: $(BUILD)/firmware.bin
 
-startup.o: startup.S
-	$(AS) $(ASFLAGS) startup.S -o startup.o
 
+$(BUILD)/%.o: %.S | $(BUILD)
+	$(AS) $(ASFLAGS) $< -o $@
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
