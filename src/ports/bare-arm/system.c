@@ -29,7 +29,8 @@
 #include "system.h"
 
 
-#define UART4 ((periph_uart_t *) 0x09000000)
+//#define UART4 ((periph_uart_t *) 0x09000000)
+#define UART_BASE ((volatile uint8_t *) 0x09000000)
 
 typedef struct {
     volatile uint32_t SR;
@@ -49,18 +50,9 @@ const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
     (uint64_t)&_start,
 };
 
-
-
-// Write a character out to the UART.
-void uart_write_char_wait(int c) {
-    // Wait for TXE, then write the character.
-    while ((UART4->SR & (1 << 7)) == 0) {
-    }
-    UART4->DR = c;
-}
-
+// Directly write the character to the UART data register
 void uart_write_char(int c) {
-    UART4->DR = c; // Directly write the character without waiting for TXE
+    *UART_BASE = c;
 }
 
 // Send string of given length to stdout, converting \n to \r\n.
