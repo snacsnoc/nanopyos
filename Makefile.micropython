@@ -8,6 +8,9 @@ include $(TOP)/py/mkenv.mk
 # Include py core make definitions.
 include $(TOP)/py/py.mk
 
+# Source files
+SRC_DIR := src/ports/bare-arm
+
 # Set makefile-level MicroPython feature configurations.
 MICROPY_ROM_TEXT_COMPRESSION ?= 0
 
@@ -40,15 +43,15 @@ endif
 
 
 # Set linker flags.
-LDFLAGS += -nostdlib -T linker-mpy.ld --gc-sections
+LDFLAGS += -nostdlib -T $(SRC_DIR)/linker-mpy.ld --gc-sections
 
 ASFLAGS := $(ARCH_FLAGS)
 
 # Define the required source files.
-SRC_C += $(TOP)/ports/bare-arm/lib.c $(TOP)/ports/bare-arm/main.c $(TOP)/ports/bare-arm/system.c
+SRC_C += $(SRC_DIR)/lib.c $(SRC_DIR)/main.c $(SRC_DIR)/system.c
 
 # Define assembly source files
-SRC_ASM += startup.S
+SRC_ASM += $(SRC_DIR)/startup.S
 
 # Define the required object files.
 OBJ += $(PY_CORE_O)
