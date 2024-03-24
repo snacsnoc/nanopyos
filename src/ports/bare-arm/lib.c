@@ -30,16 +30,29 @@
 // A full implementation should be provided, or the garbage collector enabled.
 // The functions here are very simple.
 
-extern char _heap_start;
+
+extern char _heap_start; // Start of heap
+extern char _eheap; // End of heap
+
 
 void *malloc(size_t n) {
     static char *cur_heap = NULL;
+    char *prev_heap;
+
     if (cur_heap == NULL) {
         cur_heap = &_heap_start;
     }
-    void *ptr = cur_heap;
-    cur_heap += (n + 7) & ~7;
-    return ptr;
+
+    // Check if allocating n bytes will exceed the heap area
+    if (cur_heap + n > &_eheap) {
+        // Allocation exceeds heap area
+        return NULL; // Failed allocation
+    }
+
+    // Proceed with allocation
+    prev_heap = cur_heap;
+    cur_heap += (n + 7) & ~7; // Align to 8-byte boundary
+    return prev_heap;
 }
 
 void *realloc(void *ptr, size_t size) {
