@@ -35,7 +35,7 @@ CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
 
 # Select debugging or optimization build.
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -ffreestanding -mgeneral-regs-only
+CFLAGS += -O0 -ffreestanding -mgeneral-regs-only -g
 else
 CFLAGS += -Os -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
