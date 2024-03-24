@@ -121,12 +121,12 @@ git clone https://github.com/micropython/micropython.git
 
 See `Makefile.micropython`
 Then: 
-`make -f Makefile.micropython all V=1`
+`make -f Makefile.micropython all V=1 DEBUG=1 #for gdb`
 
 
 ## booting:
 ```bash
-qemu-system-aarch64 -M virt,virtualization=off -cpu cortex-a57 -kernel build/firmware.elf -nographic -d unimp,int
+qemu-system-aarch64 -nographic -machine virt,virtualization=off -d unimp,int -cpu cortex-a57 -kernel build/firmware.elf  -s -m 8
 ```
 ## debugging:
 ```
