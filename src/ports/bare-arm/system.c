@@ -40,8 +40,6 @@ typedef struct {
 
 extern uint64_t _estack, _sidata, _sdata, _edata, _sbss, _ebss, _start;
 
-
-//void bare_main(void);
 void main(void);
 
 
@@ -54,11 +52,15 @@ const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
 
 
 // Write a character out to the UART.
-void uart_write_char(int c) {
+void uart_write_char_wait(int c) {
     // Wait for TXE, then write the character.
     while ((UART4->SR & (1 << 7)) == 0) {
     }
     UART4->DR = c;
+}
+
+void uart_write_char(int c) {
+    UART4->DR = c; // Directly write the character without waiting for TXE
 }
 
 // Send string of given length to stdout, converting \n to \r\n.
