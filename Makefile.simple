@@ -9,17 +9,19 @@ SIZE := $(CROSS_COMPILE)size
 # Set the architecture-specific flags
 ARCH_FLAGS := -march=armv8-a
 
+# Source directories
+SRC_DIR := src/ports/simple-arm
+
 # Compiler and linker flags
 CFLAGS := $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib -ffreestanding -O0 -mgeneral-regs-only
 ASFLAGS := $(ARCH_FLAGS)
-LDFLAGS := -nostdlib -T linker-mpy.ld --gc-sections
+LDFLAGS := -nostdlib -T $(SRC_DIR)/linker-simple.ld --gc-sections
 
-# Source directories
-SRC_DIR := test-build/micropython/ports/bare-arm
+
 
 # Source files
-SRC_C := $(SRC_DIR)/main_simple.c $(SRC_DIR)/system.c
-SRC_ASM := startup.S
+SRC_C := $(SRC_DIR)/main_simple.c $(SRC_DIR)/system_simple.c
+SRC_ASM := $(SRC_DIR)/startup.S
 
 # Build directory
 BUILD_DIR := simple-build
