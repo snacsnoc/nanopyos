@@ -29,7 +29,7 @@ DFU ?= $(TOP)/tools/dfu.py
 PYDFU ?= $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
-CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD)
+CFLAGS += -Isrc/include -Isrc/include/sys -I$(PREFIX)/aarch64-elf/include -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD)
 CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
 #CSUPEROPT = -Os
 
@@ -37,7 +37,7 @@ CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
 ifeq ($(DEBUG), 1)
 CFLAGS += -O0 -ffreestanding -mgeneral-regs-only -g
 else
-CFLAGS += -Os -DNDEBUG
+CFLAGS += -O0 -DNDEBUG -mgeneral-regs-only
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
