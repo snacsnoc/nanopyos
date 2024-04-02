@@ -64,9 +64,12 @@ static const char *demo_complex_input =
         "        print('{} is odd'.format(i))";
 
 
-extern void main(void) __attribute__((visibility("default")));
+extern int main(void) __attribute__((visibility("default")));
 
-void putchar(char c) { *uart = c; }
+int putchar(int c) {
+    *uart = (uint8_t)c;
+    return c;
+}
 
 
 void print(const char *s) {
@@ -98,12 +101,13 @@ static void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 
 
 // Main entry point: initialise the runtime and execute demo strings.
-void main(void) {
+int main(void) {
     print("Boots");
     mp_init();
     do_str(demo_single_input, MP_PARSE_SINGLE_INPUT);
     do_str(demo_complex_input, MP_PARSE_FILE_INPUT);
     mp_deinit();
+    return 0;
 }
 
 // Called if an exception is raised outside all C exception-catching handlers.
