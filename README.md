@@ -1,10 +1,10 @@
 # NanoPy OS
-NanoPy OS is an experimental project to embed a Python interpreter within a minimal kernel for arm64/i386 architecture. The project explores integrating MicroPython and CPython.
+NanoPy OS is an experimental project to embed a Python interpreter using MicroPython within a minimal kernel for arm64/i386 architecture
 
 TODO: make this all work
 
 
-## Building the Toolchain
+# Building the Toolchain
 
 First, set up the toolchain required for cross-compilation.
 
@@ -19,13 +19,13 @@ export PREFIX=/PATH/build/toolchain
 export TARGET=aarch64-elf
 export PATH=$PREFIX/bin:$PATH
 ```
-## Linux
+#### Linux
 ```bash
 export CC=/usr/local/bin/gcc-12
 export CXX=/usr/local/bin/g++-12
 export LD=/usr/local/bin/gcc-12
 ```
-## Mac
+#### Mac
 ```bash
 export CC=/opt/homebrew/bin/gcc-12
 export CXX=/opt/homebrew/bin/g++-12
@@ -34,7 +34,7 @@ export LD=/opt/homebrew/bin/gcc-12
 
 
 
-## Build binutils for aarch64
+## Build binutils
 ```bash
 wget https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.xz
 tar xvf binutils-2.42.tar.xz
@@ -52,7 +52,7 @@ make install
 
 
 
-## Get gcc source
+### Build gcc
 
 ```bash
 wget http://ftp.gnu.org/gnu/gcc/gcc-12.3.0/gcc-12.3.0.tar.xz
@@ -60,10 +60,10 @@ tar xvzf gcc-12.3.0.tar.xz
 cd gcc-12.3.0
 ```
 
-## get mpfr, gmp and mpc
+### get mpfr, gmp and mpc
 `bash ./contrib/download_prerequisites`
 
-### gmp - extra
+### gmp (extra)
 ```bash
 cd gmp
 mkdir build && cd build
@@ -73,7 +73,7 @@ make
 make install
 ```
 
-### mpfr - extra
+### mpfr (extra)
 ```bash
 cd mpfr
 mkdir build && cd build
@@ -82,7 +82,7 @@ make
 make install
 ```
 
-## Build gcc out of tree
+### Build gcc out of tree
 ```bash
 mkdir gcc-build
 cd gcc-build
@@ -111,7 +111,7 @@ Note: this installs to `$PREFIX/$TARGET`
 
 
 
-# MicroPython
+## MicroPython
 Clone the MicroPython repository:
 
 ```bash
@@ -120,15 +120,16 @@ git clone https://github.com/micropython/micropython.git
 ```
 
 See `Makefile.micropython`
+
 Then: 
 `make -f Makefile.micropython all V=1 DEBUG=1 #for gdb`
 
 
-## booting:
+## Booting:
 ```bash
 qemu-system-aarch64 -nographic -machine virt,virtualization=off -d unimp,int -cpu cortex-a57 -kernel build/firmware.elf  -s -m 8
 ```
-## debugging:
+## Debugging:
 ```
 qemu-system-aarch64 -M virt,virtualization=off -cpu cortex-a57 -kernel build/firmware.elf -nographic -d unimp,int -s -S
 
@@ -141,46 +142,8 @@ Simple test build:
 `make -f Makefile.simple`
 
 Boot with:
-`qemu-system-aarch64 -nographic -machine virt,virtualization=off -d unimp,int -cpu cortex-a57 -kernel simple-build/firmware.elf`
-# cpython
 
-See `Makefile`
-
-Download Python source:
-```bash
-wget https://www.python.org/ftp/python/3.11.8/Python-3.11.8.tar.xz
-cd Python-3.11.8/
-```
-
-## Configure and build for cross-compilation
-_this mostly doesn't work but only sort of_
-
-```bash
-# config.site-aarch64
-ac_cv_buggy_getaddrinfo=no
-ac_cv_file__dev_ptmx=yes
-ac_cv_file__dev_ptc=no
-```
-
-```
-CONFIG_SITE=config.site-aarch64
-LDFLAGS="-L${TARGET}/lib" \
-CFLAGS="-I${TARGET}/include" \
-STRIP=${TARGET}-strip \
-LD=${TARGET}-ld \
-CC=${TARGET}-gcc \
-CXX=${TARGET}-g++ \
-./configure --prefix=${PREFIX} \
---host=${TARGET} --build=${TARGET} \
---disable-ipv6 --without-ensurepip --disable-test-modules \
---without-doc-strings --enable-optimizations --disable-framework \
---with-build-python=python3.11 \
-ac_cv_file__dev_ptmx=no ac_cv_file__dev_ptc=no ac_cv_have_long_long_format=yes
-```
-
-
-### building the project
-TODO: compile the C program with embedded Python into a binary and then embedding the binary directly into the kernel image
+```qemu-system-aarch64 -nographic -machine virt,virtualization=off -d unimp,int -cpu cortex-a57 -kernel simple-build/firmware.elf```
 
 
 
