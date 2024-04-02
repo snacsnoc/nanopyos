@@ -47,7 +47,6 @@ SECTIONS
     /* Heap Section */
     .heap : {
         _sheap = .;
-        _heap_start = .;
         . += 1M;
         _eheap = .;
         . = ALIGN(8);
