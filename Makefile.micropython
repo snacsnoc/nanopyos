@@ -10,6 +10,8 @@ include $(TOP)/py/py.mk
 
 # Source files
 SRC_DIR := src/ports/bare-arm
+MPY_SRC_DIR := test-build/micropython/py
+
 
 # Set makefile-level MicroPython feature configurations.
 MICROPY_ROM_TEXT_COMPRESSION ?= 0
@@ -29,7 +31,7 @@ DFU ?= $(TOP)/tools/dfu.py
 PYDFU ?= $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
-CFLAGS += -Isrc/include -Isrc/include/sys -I$(PREFIX)/aarch64-elf/include -I$(TOP)/ports/bare-arm -I$(TOP) -I$(BUILD)
+CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -Isrc/include/bare-arm -I$(TOP) -I$(BUILD) -I$(TOP)/shared/runtime
 CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
 #CSUPEROPT = -Os
 
@@ -41,6 +43,11 @@ CFLAGS += -O0 -DNDEBUG -mgeneral-regs-only
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
+ifeq ($(MICROPY_USE_READLINE),1)
+INC += -I$(TOP)/shared/readline
+CFLAGS += -DMICROPY_USE_READLINE=1
+SRC_C += readline/readline.c
+endif
 
 # Set linker flags.
 LDFLAGS += -nostdlib -T $(SRC_DIR)/linker-mpy.ld --gc-sections
@@ -48,7 +55,7 @@ LDFLAGS += -nostdlib -T $(SRC_DIR)/linker-mpy.ld --gc-sections
 ASFLAGS := $(ARCH_FLAGS)
 
 # Define the required source files.
-SRC_C += $(SRC_DIR)/lib.c $(SRC_DIR)/main.c $(SRC_DIR)/system.c
+SRC_C += $(SRC_DIR)/lib.c $(SRC_DIR)/main.c $(SRC_DIR)/system.c $(TOP)/py/gc.c $(TOP)/shared/runtime/interrupt_char.c $(TOP)/shared/runtime/pyexec.c
 
 # Define assembly source files
 SRC_ASM += $(SRC_DIR)/startup.S
