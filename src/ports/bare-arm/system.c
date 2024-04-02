@@ -39,6 +39,8 @@ typedef struct {
     volatile uint32_t CR1;
 } periph_uart_t;
 
+#define UART ((periph_uart_t *)UART_BASE)
+
 extern uint64_t _estack, _sidata, _sdata, _edata, _sbss, _ebss, _start;
 
 void main(void);
@@ -46,13 +48,20 @@ void main(void);
 
 // Very simple ARM vector table.
 const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
-    (uint64_t)&_estack,
-    (uint64_t)&_start,
+        (uint64_t) & _estack,
+        (uint64_t) & _start,
 };
 
 // Directly write the character to the UART data register
 void uart_write_char(int c) {
     *UART_BASE = c;
+}
+
+// Reading a character from UART
+int uart_read_char(void) {
+    // Wait for character to be available in the receive data register
+    while (!(UART->SR & (1 << 5))) {}
+    return (int)(UART->DR);
 }
 
 // Send string of given length to stdout, converting \n to \r\n.
