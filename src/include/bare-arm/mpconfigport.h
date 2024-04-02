@@ -51,7 +51,6 @@
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_NONE)
 
 
-#define MICROPY_GC_STACK_ENTRY_TYPE size_t
 
 // Type definitions for the specific machine
 typedef int64_t mp_int_t;
