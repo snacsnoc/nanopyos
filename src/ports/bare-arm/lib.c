@@ -31,7 +31,7 @@
 // The functions here are very simple.
 
 
-extern char _heap_start; // Start of heap
+extern char _sheap; // Start of heap
 extern char _eheap; // End of heap
 
 
@@ -40,7 +40,7 @@ void *malloc(size_t n) {
     char *prev_heap;
 
     if (cur_heap == NULL) {
-        cur_heap = &_heap_start;
+        cur_heap = &_sheap;
     }
 
     // Check if allocating n bytes will exceed the heap area
