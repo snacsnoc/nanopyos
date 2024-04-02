@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "system.h"
+#include "bare-arm/system.h"
 
 
 //#define UART4 ((periph_uart_t *) 0x09000000)
