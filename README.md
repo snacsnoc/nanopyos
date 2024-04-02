@@ -1,9 +1,8 @@
 # NanoPy OS
 NanoPy OS is an experimental project to embed a Python interpreter using MicroPython within a minimal kernel for arm64/i386 architecture
 
-TODO: make this all work
 
-
+See [Releases](https://github.com/snacsnoc/nanopyos/releases/tag/0.1) for booting a compiled kernel.
 # Building the Toolchain
 
 First, set up the toolchain required for cross-compilation.
@@ -39,9 +38,10 @@ export LD=/opt/homebrew/bin/gcc-12
 wget https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.xz
 tar xvf binutils-2.42.tar.xz
 ```
+Build out of tree:
 
 ```bash
-mkdir build && cd build #build out of tree
+mkdir build && cd build 
 
 ../configure --prefix=$PREFIX --target=$TARGET --disable-nls --disable-multilib --disable-werror
 make
