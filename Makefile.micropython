@@ -12,9 +12,10 @@ include $(TOP)/py/py.mk
 SRC_DIR := src/ports/bare-arm
 MPY_SRC_DIR := test-build/micropython/py
 
+LIB_DIR += test-build/toolchain/aarch64-elf/lib
 
 # Set makefile-level MicroPython feature configurations.
-MICROPY_ROM_TEXT_COMPRESSION ?= 0
+
 
 # Define toolchain and other tools.
 CROSS_COMPILE ?= aarch64-elf-
@@ -27,43 +28,86 @@ SIZE := $(CROSS_COMPILE)size
 
 # Set the architecture-specific flags
 ARCH_FLAGS := -march=armv8-a
-DFU ?= $(TOP)/tools/dfu.py
-PYDFU ?= $(TOP)/tools/pydfu.py
+DFU = $(TOP)/tools/dfu.py
+PYDFU = $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
 CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -Isrc/include/bare-arm -I$(TOP) -I$(BUILD) -I$(TOP)/shared/runtime
-CFLAGS += $(ARCH_FLAGS) -Wall -Werror -std=c99 -nostdlib
-#CSUPEROPT = -Os
+CFLAGS += $(ARCH_FLAGS) -std=c99 -nostdlib #-std=c99 is not compatible with asm, must use __asm__
+
+# Configure floating point support
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
+else ifeq ($(MICROPY_FLOAT_IMPL),none)
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_NONE
+else
+CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
+CFLAGS += -fsingle-precision-constant
+endif
 
 # Select debugging or optimization build.
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -ffreestanding -mgeneral-regs-only -g
+CFLAGS += -Og -ffreestanding -g -Wall -fno-builtin -fverbose-asm -Werror
+MICROPY_ROM_TEXT_COMPRESSION = 0
 else
-CFLAGS += -O0 -DNDEBUG -mgeneral-regs-only
+CFLAGS += -O0 -DNDEBUG -ffreestanding
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
-ifeq ($(MICROPY_USE_READLINE),1)
-INC += -I$(TOP)/shared/readline
-CFLAGS += -DMICROPY_USE_READLINE=1
-SRC_C += readline/readline.c
-endif
+# For MicroPython REPL
+CFLAGS += -I$(TOP)/shared/readline
+SRC_C += $(TOP)/shared/readline/readline.c
+
 
 # Set linker flags.
 LDFLAGS += -nostdlib -T $(SRC_DIR)/linker-mpy.ld --gc-sections
+LDFLAGS += -static
 
 ASFLAGS := $(ARCH_FLAGS)
 
+
 # Define the required source files.
-SRC_C += $(SRC_DIR)/lib.c $(SRC_DIR)/main.c $(SRC_DIR)/system.c $(TOP)/py/gc.c $(TOP)/shared/runtime/interrupt_char.c $(TOP)/shared/runtime/pyexec.c
+SRC_C += $(SRC_DIR)/main.c $(SRC_DIR)/lib.c  $(SRC_DIR)/system.c $(SRC_DIR)/gccollect.c $(SRC_DIR)/help.c
+
+SRC_C +=  $(TOP)/shared/runtime/pyexec.c
+SRC_C +=   $(TOP)/shared/runtime/interrupt_char.c $(TOP)/shared/runtime/stdout_helpers.c
+SRC_C +=   $(TOP)/shared/libc/printf.c $(TOP)/shared/runtime/gchelper_generic.c
+
+
+SRC_QSTR += $(TOP)/shared/readline/readline.c $(TOP)/shared/runtime/pyexec.c
+
+# Define float implementation
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+	LIBM_SRC_C += $(SRC_LIB_LIBM_DBL_C)
+ifeq ($(SUPPORTS_HARDWARE_FP_DOUBLE),1)
+	LIBM_SRC_C += $(SRC_LIB_LIBM_DBL_SQRT_HW_C)
+else
+	LIBM_SRC_C += $(SRC_LIB_LIBM_DBL_SQRT_SW_C)
+endif
+else
+	LIBM_SRC_C += $(SRC_LIB_LIBM_C)
+ifeq ($(SUPPORTS_HARDWARE_FP_SINGLE),1)
+	LIBM_SRC_C += $(SRC_LIB_LIBM_SQRT_HW_C)
+else
+	LIBM_SRC_C += $(SRC_LIB_LIBM_SQRT_SW_C)
+endif
+endif
+
+
 
 # Define assembly source files
 SRC_ASM += $(SRC_DIR)/startup.S
 
+
+#SRC_C += $(TOP)/shared/libc/string0.c
+
+
 # Define the required object files.
 OBJ += $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+OBJ += $(addprefix $(BUILD)/, $(LIBM_SRC_C:.c=.o))
 OBJ += $(SRC_ASM:.S=.o)
+
 
 
 .PHONY: all clean
@@ -77,7 +121,7 @@ $(BUILD)/%.o: %.S | $(BUILD)
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
-	$(Q)$(LD) $(LDFLAGS) -o $@ $^
+	$(Q)$(LD) $(LDFLAGS) -o $@ $^ -L$(LIB_DIR) -lm
 	$(Q)$(SIZE) $@
 	$(Q)$(OBJCOPY) -O binary $(BUILD)/firmware.elf kernel.img
 
