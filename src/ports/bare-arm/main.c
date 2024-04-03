@@ -137,7 +137,7 @@ int mp_hal_stdin_rx_chr(void) {
 int main(void) {
     print("Boots");
     mp_stack_ctrl_init();
-    mp_stack_set_limit(40000 * (BYTES_PER_WORD / 4));
+    mp_stack_set_limit(40000 << (BYTES_PER_WORD - 2));
 
     gc_init(&_sheap, &_eheap);
     mp_init();
