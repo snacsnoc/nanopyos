@@ -25,6 +25,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include "bare-arm/system.h"
 
@@ -64,12 +65,3 @@ int uart_read_char(void) {
     return (int)(UART->DR);
 }
 
-// Send string of given length to stdout, converting \n to \r\n.
-void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
-    while (len--) {
-        if (*str == '\n') {
-            uart_write_char('\r');
-        }
-        uart_write_char(*str++);
-    }
-}
