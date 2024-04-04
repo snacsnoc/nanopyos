@@ -33,7 +33,7 @@ PYDFU = $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
 CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -Isrc/include/bare-arm -I$(TOP) -I$(BUILD) -I$(TOP)/shared/runtime
-CFLAGS += $(ARCH_FLAGS) -std=c99 -nostdlib #-std=c99 is not compatible with asm, must use __asm__
+CFLAGS += $(ARCH_FLAGS) -std=c11 -nostdlib #-std=c99 is not compatible with asm, must use __asm__
 
 # Configure floating point support
 ifeq ($(MICROPY_FLOAT_IMPL),double)
@@ -69,7 +69,7 @@ ASFLAGS := $(ARCH_FLAGS)
 # Define the required source files.
 SRC_C += $(SRC_DIR)/main.c $(SRC_DIR)/lib.c  $(SRC_DIR)/system.c $(SRC_DIR)/gccollect.c $(SRC_DIR)/help.c $(SRC_DIR)/../../sys/errno.c
 
-SRC_C +=  $(TOP)/shared/runtime/pyexec.c
+SRC_C +=   $(TOP)/shared/runtime/pyexec.c
 SRC_C +=   $(TOP)/shared/runtime/interrupt_char.c $(TOP)/shared/runtime/stdout_helpers.c
 SRC_C +=   $(TOP)/shared/libc/printf.c $(TOP)/shared/runtime/gchelper_generic.c
 
