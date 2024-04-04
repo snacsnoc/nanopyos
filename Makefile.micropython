@@ -27,7 +27,7 @@ SIZE := $(CROSS_COMPILE)size
 
 
 # Set the architecture-specific flags
-ARCH_FLAGS := -march=armv8-a
+ARCH_FLAGS := -march=armv8-a -mcpu=cortex-a57
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 
