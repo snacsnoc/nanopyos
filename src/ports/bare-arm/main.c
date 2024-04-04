@@ -27,26 +27,28 @@
 
 #include <string.h>
 #include <stddef.h>
+
 #include "bare-arm/input.h"
 #include "bare-arm/mphalport.h"
 #include "bare-arm/mpconfigport.h"
 #include "bare-arm/system.h"
-
 #include "py/builtin.h"
+
+
 #include "py/compile.h"
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "py/stackctrl.h"
 #include "py/repl.h"
+#include <stdlib.h>
 
 #include "shared/runtime/gchelper.h"
 #include "shared/runtime/pyexec.h"
 #include "shared/readline/readline.h"
 
-
 const char *text;
 volatile uint8_t *uart = (uint8_t *) 0x09000000;
-volatile uint8_t *uart_status = (uint8_t *)0x09000004;
+//volatile uint8_t *uart_status = (uint8_t *)0x09000004;
 
 
 // Prototype for hardware-specific UART read function
@@ -63,50 +65,43 @@ size_t gc_get_max_new_split(void) {
 extern int main(void) __attribute__((visibility("default")));
 extern char _sheap;
 extern char _eheap;
+extern char _estack;
 
-int putchar(int c);
+void uart_putc(char c) {
+    *(volatile unsigned int*)uart = c;
+}
 
+void pputchar(char c) { *uart = c; }
 
 void print(const char *s) {
     while (*s != '\0') {
-        putchar(*s);
+        pputchar(*s);
         s++;
     }
 }
+
+void printc(const char *s) {
+    while (*s) {
+        uart_putc(*s++);
+    }
+}
+
 // Function to check if UART has received data
-int uart_has_data(void) {
-    return *uart_status & 0x01;
-}
+//int uart_has_data(void) {
+//    return *uart_status & 0x01;
+//}
+//
+//// Function to receive a byte from UART
+//int uart_receive_byte(void) {
+//    if (uart_has_data()) {
+//        // Read a byte from UART data register and return it
+//        return (int)(*uart);
+//    } else {
+//        return -1;
+//    }
+//}
 
-// Function to receive a byte from UART
-int uart_receive_byte(void) {
-    if (uart_has_data()) {
-        // Read a byte from UART data register and return it
-        return (int)(*uart);
-    } else {
-        return -1;
-    }
-}
 
-// Custom read function to replace Unix `read`
-// Attempts to read `count` bytes into `buf` from file descriptor `fd`
-// Since this is a bare-metal system, `fd` is ignored
-ssize_t read(int fd, void *buf, size_t count) {
-    unsigned char *pbuf = (unsigned char *)buf;
-    size_t bytes_read = 0;
-
-    for (size_t i = 0; i < count; i++) {
-        int byte = uart_read_byte();
-        if (byte == -1) {
-            // No more data available
-            break;
-        }
-        pbuf[i] = (unsigned char)byte;
-        bytes_read++;
-    }
-
-    return bytes_read;
-}
 
 // Dummy implementation of uart_read_byte
 int uart_read_byte(void) {
@@ -115,29 +110,52 @@ int uart_read_byte(void) {
     return -1;
 }
 
-// Receive single character, blocking until one is available.
-/*
-int mp_hal_stdin_rx_chr(void) {
-    unsigned char c = 0;
-    int r = read(STDIN_FILENO, &c, 1);
-    (void)r;
-    return c;
-}
- */
-int mp_hal_stdin_rx_chr(void) {
-    int byte;
-    while ((byte = uart_receive_byte()) < 0) {
-        // TODO: include a small delay here to prevent a tight polling loop,
+
+void printc_hex(unsigned long value) {
+    const char hex_chars[] = "0123456789ABCDEF";
+    char buffer[19]; // Long enough for 64-bit hexadecimal + "0x" prefix + null terminator
+    char *buf_ptr = &buffer[18];
+    *buf_ptr = '\0';
+
+    do {
+        *(--buf_ptr) = hex_chars[value % 16];
+        value /= 16;
+    } while (value != 0);
+
+
+    *(--buf_ptr) = 'x';
+    *(--buf_ptr) = '0';
+
+
+    while (*buf_ptr) {
+        uart_putc(*buf_ptr++);
     }
-    return byte;
 }
 
+void mem_test(void){
+    printc("Heap start: ");
+    printc_hex((unsigned long)&_sheap);
+    printc("\nHeap end: ");
+    printc_hex((unsigned long)&_eheap);
+    printc("\nStack end (top): ");
+    printc_hex((unsigned long)&_estack);
+    printc("\n");
+    void *test_alloc = malloc(48);
+    if (test_alloc == NULL) {
+        printc("Failed to allocate memory\n");
+    } else {
+        printc("Memory allocation successful\n");
+        m_free(test_alloc, 48);
+    }
+}
 
 // Main entry point: initialise the runtime
 int main(void) {
-    print("Boots");
+    printc("Boots\n\n");
     mp_stack_ctrl_init();
+
     mp_stack_set_limit(40000 << (BYTES_PER_WORD - 2));
+    mem_test();
 
     gc_init(&_sheap, &_eheap);
     mp_init();
@@ -145,9 +163,9 @@ int main(void) {
     pyexec_friendly_repl();
     gc_sweep_all();
     mp_deinit();
+
     return 0;
 }
-
 
 // Called if an exception is raised outside all C exception-catching handlers.
 void nlr_jump_fail(void *val) {
@@ -182,25 +200,14 @@ mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
     mp_raise_OSError(MP_ENOENT);
 }
 
-
+int mp_hal_stdin_rx_chr(void) {
+    unsigned char c = 0;
+    return c;
+}
 
 // Send string of given length
 mp_uint_t mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
     mp_uint_t ret = len;
-#if MICROPY_MIN_USE_STDOUT
-    int r = write(STDOUT_FILENO, str, len);
-    if (r >= 0) {
-        // in case of an error in the syscall, report no bytes written
-        ret = 0;
-    }
-#elif MICROPY_MIN_USE_STM32_MCU
-    while (len--) {
-        // wait for TXE
-        while ((USART1->SR & (1 << 7)) == 0) {
-        }
-        USART1->DR = *str++;
-    }
-#endif
     return ret;
 }
 
