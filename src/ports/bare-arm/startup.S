@@ -1,5 +1,6 @@
-.section .text
 .global _start
+.section .text
+
 
 _start:
 
@@ -24,5 +25,6 @@ zero_done:
     bl main       // Branch to main function
     b . // Infinite loop
 
+.align 8
 
 
