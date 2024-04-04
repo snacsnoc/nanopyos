@@ -33,9 +33,6 @@
 void gc_collect(void) {
     gc_collect_start();
     gc_helper_collect_regs_and_stack();
-    #if MICROPY_PY_THREAD
-    mp_thread_gc_others();
-    #endif
     gc_collect_end();
 }
 
