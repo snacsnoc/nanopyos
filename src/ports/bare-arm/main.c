@@ -27,35 +27,35 @@
 
 #include <string.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+
+#if MICROPY_MIN_USE_STDOUT
+//used for write()
+#include <unistd.h>
+#endif
 
 #include "bare-arm/input.h"
 #include "bare-arm/mphalport.h"
 #include "bare-arm/mpconfigport.h"
 #include "bare-arm/system.h"
+
 #include "py/builtin.h"
-
-
+#include "py/runtime.h"
 #include "py/compile.h"
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "py/stackctrl.h"
 #include "py/repl.h"
-#include <stdlib.h>
+#include "py/obj.h"
+
 
 #include "shared/runtime/gchelper.h"
 #include "shared/runtime/pyexec.h"
 #include "shared/readline/readline.h"
 
 const char *text;
-volatile uint8_t *uart = (uint8_t *) 0x09000000;
-//volatile uint8_t *uart_status = (uint8_t *)0x09000004;
-
-
-// Prototype for hardware-specific UART read function
-// Returns -1 if no data, or the read byte
-int uart_read_byte(void);
-
-long heap_size = 1024 * 1024 * (sizeof(mp_uint_t) / 4);
 
 // Python heap
 size_t gc_get_max_new_split(void) {
@@ -63,115 +63,13 @@ size_t gc_get_max_new_split(void) {
 }
 
 extern int main(void) __attribute__((visibility("default")));
+
 extern char _sheap;
 extern char _eheap;
 extern char _estack;
 
-void uart_putc(char c) {
-    *(volatile unsigned int*)uart = c;
-}
-
-void pputchar(char c) { *uart = c; }
-
-void print(const char *s) {
-    while (*s != '\0') {
-        pputchar(*s);
-        s++;
-    }
-}
-
-void printc(const char *s) {
-    while (*s) {
-        uart_putc(*s++);
-    }
-}
-
-// Function to check if UART has received data
-//int uart_has_data(void) {
-//    return *uart_status & 0x01;
-//}
-//
-//// Function to receive a byte from UART
-//int uart_receive_byte(void) {
-//    if (uart_has_data()) {
-//        // Read a byte from UART data register and return it
-//        return (int)(*uart);
-//    } else {
-//        return -1;
-//    }
-//}
 
 
-
-// Dummy implementation of uart_read_byte
-int uart_read_byte(void) {
-    // Check if UART has data and return the byte
-    // Return -1 if no data is available
-    return -1;
-}
-
-
-void printc_hex(unsigned long value) {
-    const char hex_chars[] = "0123456789ABCDEF";
-    char buffer[19]; // Long enough for 64-bit hexadecimal + "0x" prefix + null terminator
-    char *buf_ptr = &buffer[18];
-    *buf_ptr = '\0';
-
-    do {
-        *(--buf_ptr) = hex_chars[value % 16];
-        value /= 16;
-    } while (value != 0);
-
-
-    *(--buf_ptr) = 'x';
-    *(--buf_ptr) = '0';
-
-
-    while (*buf_ptr) {
-        uart_putc(*buf_ptr++);
-    }
-}
-
-void mem_test(void){
-    printc("Heap start: ");
-    printc_hex((unsigned long)&_sheap);
-    printc("\nHeap end: ");
-    printc_hex((unsigned long)&_eheap);
-    printc("\nStack end (top): ");
-    printc_hex((unsigned long)&_estack);
-    printc("\n");
-    void *test_alloc = malloc(48);
-    if (test_alloc == NULL) {
-        printc("Failed to allocate memory\n");
-    } else {
-        printc("Memory allocation successful\n");
-        m_free(test_alloc, 48);
-    }
-}
-
-// Main entry point: initialise the runtime
-int main(void) {
-    printc("Boots\n\n");
-    mp_stack_ctrl_init();
-
-    mp_stack_set_limit(40000 << (BYTES_PER_WORD - 2));
-    mem_test();
-
-    gc_init(&_sheap, &_eheap);
-    mp_init();
-    mp_hal_set_interrupt_char(CHAR_CTRL_C);
-    pyexec_friendly_repl();
-    gc_sweep_all();
-    mp_deinit();
-
-    return 0;
-}
-
-// Called if an exception is raised outside all C exception-catching handlers.
-void nlr_jump_fail(void *val) {
-    for (;;) {
-    }
-}
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -190,6 +88,92 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 }
 #endif
 
+
+
+
+
+
+
+int mem_test(void) {
+    printc("Heap start: ");
+    printc_hex((unsigned long) &_sheap);
+    printc("\nHeap end: ");
+    printc_hex((unsigned long) &_eheap);
+    printc("\nStack end (top): ");
+    printc_hex((unsigned long) &_estack);
+    printc("\n");
+    void *test_alloc = malloc(48);
+    if (test_alloc == NULL) {
+        printc("Failed to allocate memory\n");
+    } else {
+        printc("Memory allocation successful\n\n");
+        m_free(test_alloc, 48);
+    }
+    return 0;
+}
+
+
+
+
+// wrapper for gc_init with debug prints
+void gc_init_debug(void *start, void *end) {
+    if (!start || !end || start >= end) {
+        print("Invalid heap boundaries.\n");
+        return;
+    }
+    gc_init(start, end);
+    print("GC init called with boundaries: Start: ");
+    printc_hex((unsigned long) start);
+    print(" End: ");
+    printc_hex((unsigned long) end);
+    print("\n");
+}
+
+// Main entry point: initialise the runtime
+int main(void) {
+    printc("Boots\n\n");
+    mp_stack_ctrl_init();
+
+    mp_stack_set_limit(40000 << (BYTES_PER_WORD - 2));
+
+    //gc_init(&_sheap, &_eheap);
+    gc_init_debug(&_sheap, &_eheap);
+    mp_init();
+    print("mp init!\n");
+    mem_test();
+    mp_hal_set_interrupt_char(CHAR_CTRL_C);
+    //do_str("print('hello world!', list(x+1 for x in range(10)), end='eol\\n')", MP_PARSE_SINGLE_INPUT);
+    //do_str("for i in range(10):\r\n  print(i)", MP_PARSE_FILE_INPUT);
+    #if MICROPY_REPL_EVENT_DRIVEN
+        pyexec_event_repl_init();
+        for (;;) {
+            int c = uart_read_char();
+            if (pyexec_event_repl_process_char(c)) {
+                break;
+            }
+        }
+    #else
+        readline_init0();
+
+        pyexec_friendly_repl();
+    #endif
+    //print(">>> ");
+    gc_sweep_all();
+    mem_test();
+    mp_deinit();
+
+
+    return 0;
+}
+
+// Called if an exception is raised outside all C exception-catching handlers.
+void nlr_jump_fail(void *val) {
+    print("nlr jump fail");
+    for (;;) {
+    }
+}
+
+
 // There is no filesystem so stat'ing returns nothing.
 mp_import_stat_t mp_import_stat(const char *path) {
     return MP_IMPORT_STAT_NO_EXIST;
@@ -200,21 +184,21 @@ mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
     mp_raise_OSError(MP_ENOENT);
 }
 
-int mp_hal_stdin_rx_chr(void) {
-    unsigned char c = 0;
-    return c;
-}
-
-// Send string of given length
-mp_uint_t mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
-    mp_uint_t ret = len;
-    return ret;
-}
 
 #ifndef NDEBUG
 // Used when debugging is enabled.
-void MP_WEAK __assert_func(const char *file, int line, const char *func, const char *expr) {
+void MP_WEAK
+
+__assert_func(const char *file, int line, const char *func, const char *expr) {
     for (;;) {
     }
 }
+
 #endif
+
+void NORETURN
+
+__fatal_error(const char *msg) {
+    while (1) { ;
+    }
+}
