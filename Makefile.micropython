@@ -33,6 +33,9 @@ PYDFU = $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
 CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -Isrc/include/bare-arm -I$(TOP) -I$(BUILD) -I$(TOP)/shared/runtime
+# For MicroPython REPL
+CFLAGS += -I$(TOP)/shared/readline
+
 CFLAGS += $(ARCH_FLAGS) -std=c11 -nostdlib #-std=c99 is not compatible with asm, must use __asm__
 
 # Configure floating point support
@@ -54,9 +57,7 @@ CFLAGS += -O0 -DNDEBUG -ffreestanding
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
-# For MicroPython REPL
-CFLAGS += -I$(TOP)/shared/readline
-SRC_C += $(TOP)/shared/readline/readline.c
+
 
 
 # Set linker flags.
@@ -67,14 +68,18 @@ ASFLAGS := $(ARCH_FLAGS)
 
 
 # Define the required source files.
-SRC_C += $(SRC_DIR)/main.c $(SRC_DIR)/lib.c  $(SRC_DIR)/system.c $(SRC_DIR)/gccollect.c $(SRC_DIR)/help.c $(SRC_DIR)/../../sys/errno.c
+SRC_C += $(SRC_DIR)/main.c $(SRC_DIR)/lib.c $(SRC_DIR)/read.c $(SRC_DIR)/system.c $(SRC_DIR)/gccollect.c $(SRC_DIR)/help.c $(SRC_DIR)/../../sys/errno.c
 
-SRC_C +=   $(TOP)/shared/runtime/pyexec.c
+SRC_C +=   $(TOP)/shared/runtime/pyexec.c $(TOP)/shared/readline/readline.c
 SRC_C +=   $(TOP)/shared/runtime/interrupt_char.c $(TOP)/shared/runtime/stdout_helpers.c
 SRC_C +=   $(TOP)/shared/libc/printf.c $(TOP)/shared/runtime/gchelper_generic.c
 
+# List of sources for qstr extraction
+SRC_QSTR += $(SRC_C)
 
-SRC_QSTR += $(TOP)/shared/readline/readline.c $(TOP)/shared/runtime/pyexec.c
+ifneq ($(FROZEN_MANIFEST),)
+CFLAGS += -DMPZ_DIG_SIZE=16 # force 16 bits to work on both 32 and 64 bit archs
+endif
 
 # Define float implementation
 ifeq ($(MICROPY_FLOAT_IMPL),double)
@@ -109,6 +114,8 @@ OBJ += $(addprefix $(BUILD)/, $(LIBM_SRC_C:.c=.o))
 OBJ += $(SRC_ASM:.S=.o)
 
 
+# Include remaining core make rules.
+include $(TOP)/py/mkrules.mk
 
 .PHONY: all clean
 
@@ -142,5 +149,4 @@ debug: $(BUILD)/firmware.elf
 	aarch64-elf-gdb $< -ex "target remote localhost:1234"
 
 
-# Include remaining core make rules.
-include $(TOP)/py/mkrules.mk
+
