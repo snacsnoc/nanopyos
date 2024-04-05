@@ -28,11 +28,15 @@ typedef unsigned __Long __ULong;
 #endif
 
 #if !defined( __Long)
+
 #include <sys/types.h>
+
 #endif
 
 #ifndef __machine_flock_t_defined
+
 #include <sys/lock.h>
+
 typedef _LOCK_RECURSIVE_T _flock_t;
 #endif
 
@@ -50,59 +54,59 @@ struct __locale_t;
  * by having nearly everything possible allocated at first use.
  */
 
-struct _Bigint
-{
-  struct _Bigint *_next;
-  int _k, _maxwds, _sign, _wds;
-  __ULong _x[1];
+struct _Bigint {
+    struct _Bigint *_next;
+    int _k, _maxwds, _sign, _wds;
+    __ULong _x[1];
 };
 
 /* needed by reentrant structure */
-struct __tm
-{
-  int   __tm_sec;
-  int   __tm_min;
-  int   __tm_hour;
-  int   __tm_mday;
-  int   __tm_mon;
-  int   __tm_year;
-  int   __tm_wday;
-  int   __tm_yday;
-  int   __tm_isdst;
+struct __tm {
+    int __tm_sec;
+    int __tm_min;
+    int __tm_hour;
+    int __tm_mday;
+    int __tm_mon;
+    int __tm_year;
+    int __tm_wday;
+    int __tm_yday;
+    int __tm_isdst;
 };
 
 /*
  * atexit() support.
  */
 
-#define	_ATEXIT_SIZE 32	/* must be at least 32 to guarantee ANSI conformance */
+#define    _ATEXIT_SIZE 32    /* must be at least 32 to guarantee ANSI conformance */
 
 struct _on_exit_args {
-	void *  _fnargs[_ATEXIT_SIZE];	        /* user fn args */
-	void *	_dso_handle[_ATEXIT_SIZE];
-	/* Bitmask is set if user function takes arguments.  */
-	__ULong _fntypes;           	        /* type of exit routine -
+    void *_fnargs[_ATEXIT_SIZE];            /* user fn args */
+    void *_dso_handle[_ATEXIT_SIZE];
+    /* Bitmask is set if user function takes arguments.  */
+    __ULong _fntypes;                    /* type of exit routine -
 				   Must have at least _ATEXIT_SIZE bits */
-	/* Bitmask is set if function was registered via __cxa_atexit.  */
-	__ULong _is_cxa;
+    /* Bitmask is set if function was registered via __cxa_atexit.  */
+    __ULong _is_cxa;
 };
 
 #ifdef _REENT_SMALL
 struct _atexit {
-	struct	_atexit *_next;			/* next in list */
-	int	_ind;				/* next index in this table */
-	void	(*_fns[_ATEXIT_SIZE])(void);	/* the table itself */
+    struct	_atexit *_next;			/* next in list */
+    int	_ind;				/* next index in this table */
+    void	(*_fns[_ATEXIT_SIZE])(void);	/* the table itself */
         struct _on_exit_args * _on_exit_args_ptr;
 };
 # define _ATEXIT_INIT {_NULL, 0, {_NULL}, _NULL}
 #else
+
 struct _atexit {
-	struct	_atexit *_next;			/* next in list */
-	int	_ind;				/* next index in this table */
-	/* Some entries may already have been called, and will be NULL.  */
-	void	(*_fns[_ATEXIT_SIZE])(void);	/* the table itself */
-        struct _on_exit_args _on_exit_args;
+    struct _atexit *_next;            /* next in list */
+    int _ind;                /* next index in this table */
+    /* Some entries may already have been called, and will be NULL.  */
+    void (*_fns[_ATEXIT_SIZE])(void);    /* the table itself */
+    struct _on_exit_args _on_exit_args;
 };
+
 # define _ATEXIT_INIT {_NULL, 0, {_NULL}, {{_NULL}, {_NULL}, 0, 0}}
 #endif
 
@@ -114,8 +118,8 @@ struct _atexit {
  */
 
 struct __sbuf {
-	unsigned char *_base;
-	int	_size;
+    unsigned char *_base;
+    int _size;
 };
 
 /*
@@ -151,54 +155,57 @@ struct __sbuf {
 #ifndef __CYGWIN__
 
 struct __sFILE {
-  unsigned char *_p;	/* current position in (some) buffer */
-  int	_r;		/* read space left for getc() */
-  int	_w;		/* write space left for putc() */
-  short	_flags;		/* flags, below; this FILE is free if 0 */
-  short	_file;		/* fileno, if Unix descriptor, else -1 */
-  struct __sbuf _bf;	/* the buffer (at least 1 byte, if !NULL) */
-  int	_lbfsize;	/* 0 or -_bf._size, for inline putc */
+    unsigned char *_p;    /* current position in (some) buffer */
+    int _r;        /* read space left for getc() */
+    int _w;        /* write space left for putc() */
+    short _flags;        /* flags, below; this FILE is free if 0 */
+    short _file;        /* fileno, if Unix descriptor, else -1 */
+    struct __sbuf _bf;    /* the buffer (at least 1 byte, if !NULL) */
+    int _lbfsize;    /* 0 or -_bf._size, for inline putc */
 
 #ifdef _REENT_SMALL
-  struct _reent *_data;
+    struct _reent *_data;
 #endif
 
-  /* operations */
-  void *	_cookie;	/* cookie passed to io functions */
+    /* operations */
+    void *_cookie;    /* cookie passed to io functions */
 
-  _READ_WRITE_RETURN_TYPE (*_read) (struct _reent *, void *,
-					   char *, _READ_WRITE_BUFSIZE_TYPE);
-  _READ_WRITE_RETURN_TYPE (*_write) (struct _reent *, void *,
-					    const char *,
-					    _READ_WRITE_BUFSIZE_TYPE);
-  _fpos_t (*_seek) (struct _reent *, void *, _fpos_t, int);
-  int (*_close) (struct _reent *, void *);
+    _READ_WRITE_RETURN_TYPE (*_read)(struct _reent *, void *,
+                                     char *, _READ_WRITE_BUFSIZE_TYPE);
 
-  /* separate buffer for long sequences of ungetc() */
-  struct __sbuf _ub;	/* ungetc buffer */
-  unsigned char *_up;	/* saved _p when _p is doing ungetc data */
-  int	_ur;		/* saved _r when _r is counting ungetc data */
+    _READ_WRITE_RETURN_TYPE (*_write)(struct _reent *, void *,
+                                      const char *,
+                                      _READ_WRITE_BUFSIZE_TYPE);
 
-  /* tricks to meet minimum requirements even when malloc() fails */
-  unsigned char _ubuf[3];	/* guarantee an ungetc() buffer */
-  unsigned char _nbuf[1];	/* guarantee a getc() buffer */
+    _fpos_t (*_seek)(struct _reent *, void *, _fpos_t, int);
 
-  /* separate buffer for fgetline() when line crosses buffer boundary */
-  struct __sbuf _lb;	/* buffer for fgetline() */
+    int (*_close)(struct _reent *, void *);
 
-  /* Unix stdio files get aligned to block boundaries on fseek() */
-  int	_blksize;	/* stat.st_blksize (may be != _bf._size) */
-  _off_t _offset;	/* current lseek offset */
+    /* separate buffer for long sequences of ungetc() */
+    struct __sbuf _ub;    /* ungetc buffer */
+    unsigned char *_up;    /* saved _p when _p is doing ungetc data */
+    int _ur;        /* saved _r when _r is counting ungetc data */
+
+    /* tricks to meet minimum requirements even when malloc() fails */
+    unsigned char _ubuf[3];    /* guarantee an ungetc() buffer */
+    unsigned char _nbuf[1];    /* guarantee a getc() buffer */
+
+    /* separate buffer for fgetline() when line crosses buffer boundary */
+    struct __sbuf _lb;    /* buffer for fgetline() */
+
+    /* Unix stdio files get aligned to block boundaries on fseek() */
+    int _blksize;    /* stat.st_blksize (may be != _bf._size) */
+    _off_t _offset;    /* current lseek offset */
 
 #ifndef _REENT_SMALL
-  struct _reent *_data;	/* Here for binary compatibility? Remove? */
+    struct _reent *_data;    /* Here for binary compatibility? Remove? */
 #endif
 
 #ifndef __SINGLE_THREAD__
-  _flock_t _lock;	/* for thread-safety locking */
+    _flock_t _lock;    /* for thread-safety locking */
 #endif
-  _mbstate_t _mbstate;	/* for wide char stdio functions. */
-  int   _flags2;        /* for future use */
+    _mbstate_t _mbstate;    /* for wide char stdio functions. */
+    int _flags2;        /* for future use */
 };
 
 #endif /* !__CYGWIN__ */
@@ -234,10 +241,10 @@ struct __sFILE64 {
   void *	_cookie;	/* cookie passed to io functions */
 
   _READ_WRITE_RETURN_TYPE (*_read) (struct _reent *, void *,
-					   char *, _READ_WRITE_BUFSIZE_TYPE);
+                       char *, _READ_WRITE_BUFSIZE_TYPE);
   _READ_WRITE_RETURN_TYPE (*_write) (struct _reent *, void *,
-					    const char *,
-					    _READ_WRITE_BUFSIZE_TYPE);
+                        const char *,
+                        _READ_WRITE_BUFSIZE_TYPE);
   _fpos_t (*_seek) (struct _reent *, void *, _fpos_t, int);
   int (*_close) (struct _reent *, void *);
 
@@ -267,17 +274,16 @@ struct __sFILE64 {
 };
 typedef struct __sFILE64 __FILE;
 #else
-typedef struct __sFILE   __FILE;
+typedef struct __sFILE __FILE;
 #endif /* __LARGE64_FILES */
 #endif /* !__CUSTOM_FILE_IO__ */
 
 extern __FILE __sf[3];
 
-struct _glue
-{
-  struct _glue *_next;
-  int _niobs;
-  __FILE *_iobs;
+struct _glue {
+    struct _glue *_next;
+    int _niobs;
+    __FILE *_iobs;
 };
 
 extern struct _glue __sglue;
@@ -304,12 +310,12 @@ extern struct _glue __sglue;
 #define        _RAND48_MULT_2  (0x0005)
 #define        _RAND48_ADD     (0x000b)
 struct _rand48 {
-  unsigned short _seed[3];
-  unsigned short _mult[3];
-  unsigned short _add;
+    unsigned short _seed[3];
+    unsigned short _mult[3];
+    unsigned short _add;
 #ifdef _REENT_SMALL
-  /* Put this in here as well, for good luck.  */
-  __extension__ unsigned long long _rand_next;
+    /* Put this in here as well, for good luck.  */
+    __extension__ unsigned long long _rand_next;
 #endif
 };
 
@@ -565,89 +571,86 @@ struct _reent
 
 #else /* !_REENT_SMALL */
 
-struct _reent
-{
-  int _errno;			/* local copy of errno */
+struct _reent {
+    int _errno;            /* local copy of errno */
 
-  /* FILE is a big struct and may change over time.  To try to achieve binary
-     compatibility with future versions, put stdin,stdout,stderr here.
-     These are pointers into member __sf defined below.  */
-  __FILE *_stdin, *_stdout, *_stderr;
+    /* FILE is a big struct and may change over time.  To try to achieve binary
+       compatibility with future versions, put stdin,stdout,stderr here.
+       These are pointers into member __sf defined below.  */
+    __FILE *_stdin, *_stdout, *_stderr;
 
-  int  _inc;			/* used by tmpnam */
-  char _emergency[_REENT_EMERGENCY_SIZE];
-
-#ifdef _REENT_BACKWARD_BINARY_COMPAT
-  int _reserved_1;
-#endif
-  struct __locale_t *_locale;/* per-thread locale */
+    int _inc;            /* used by tmpnam */
+    char _emergency[_REENT_EMERGENCY_SIZE];
 
 #ifdef _REENT_BACKWARD_BINARY_COMPAT
-  int _reserved_0;
+    int _reserved_1;
 #endif
+    struct __locale_t *_locale;/* per-thread locale */
 
-  void (*__cleanup) (struct _reent *);
-
-  /* used by mprec routines */
-  struct _Bigint *_result;
-  int _result_k;
-  struct _Bigint *_p5s;
-  struct _Bigint **_freelist;
-
-  /* used by some fp conversion routines */
-  int _cvtlen;			/* should be size_t */
-  char *_cvtbuf;
-
-  union
-    {
-      struct
-        {
 #ifdef _REENT_BACKWARD_BINARY_COMPAT
-          unsigned int _reserved_2;
+    int _reserved_0;
 #endif
-          char * _strtok_last;
-          char _asctime_buf[_REENT_ASCTIME_SIZE];
-          struct __tm _localtime_buf;
-          int _gamma_signgam;
-          __extension__ unsigned long long _rand_next;
-          struct _rand48 _r48;
-          _mbstate_t _mblen_state;
-          _mbstate_t _mbtowc_state;
-          _mbstate_t _wctomb_state;
-          char _l64a_buf[8];
-          char _signal_buf[_REENT_SIGNAL_SIZE];
-          int _getdate_err;
-          _mbstate_t _mbrlen_state;
-          _mbstate_t _mbrtowc_state;
-          _mbstate_t _mbsrtowcs_state;
-          _mbstate_t _wcrtomb_state;
-          _mbstate_t _wcsrtombs_state;
-	  int _h_errno;
+
+    void (*__cleanup)(struct _reent *);
+
+    /* used by mprec routines */
+    struct _Bigint *_result;
+    int _result_k;
+    struct _Bigint *_p5s;
+    struct _Bigint **_freelist;
+
+    /* used by some fp conversion routines */
+    int _cvtlen;            /* should be size_t */
+    char *_cvtbuf;
+
+    union {
+        struct {
+#ifdef _REENT_BACKWARD_BINARY_COMPAT
+            unsigned int _reserved_2;
+#endif
+            char *_strtok_last;
+            char _asctime_buf[_REENT_ASCTIME_SIZE];
+            struct __tm _localtime_buf;
+            int _gamma_signgam;
+            __extension__ unsigned long long _rand_next;
+            struct _rand48 _r48;
+            _mbstate_t _mblen_state;
+            _mbstate_t _mbtowc_state;
+            _mbstate_t _wctomb_state;
+            char _l64a_buf[8];
+            char _signal_buf[_REENT_SIGNAL_SIZE];
+            int _getdate_err;
+            _mbstate_t _mbrlen_state;
+            _mbstate_t _mbrtowc_state;
+            _mbstate_t _mbsrtowcs_state;
+            _mbstate_t _wcrtomb_state;
+            _mbstate_t _wcsrtombs_state;
+            int _h_errno;
 #ifdef __CYGWIN__
-          _mbstate_t _c8rtomb_state;
-          _mbstate_t _c16rtomb_state;
-          _mbstate_t _c32rtomb_state;
-          _mbstate_t _mbrtoc8_state;
-          _mbstate_t _mbrtoc16_state;
-          _mbstate_t _mbrtoc32_state;
+            _mbstate_t _c8rtomb_state;
+            _mbstate_t _c16rtomb_state;
+            _mbstate_t _c32rtomb_state;
+            _mbstate_t _mbrtoc8_state;
+            _mbstate_t _mbrtoc16_state;
+            _mbstate_t _mbrtoc32_state;
 #endif
         } _reent;
 #ifdef _REENT_BACKWARD_BINARY_COMPAT
-      struct
-        {
-          unsigned char * _reserved_3[30];
-          unsigned int _reserved_4[30];
-        } _reserved_5;
+        struct
+          {
+            unsigned char * _reserved_3[30];
+            unsigned int _reserved_4[30];
+          } _reserved_5;
 #endif
     } _new;
 
 #ifdef _REENT_BACKWARD_BINARY_COMPAT
-  struct _atexit *_reserved_6;
-  struct _atexit _reserved_7;
+    struct _atexit *_reserved_6;
+    struct _atexit _reserved_7;
 #endif
 
-  /* signal info */
-  void (**_sig_func)(int);
+    /* signal info */
+    void (**_sig_func)(int);
 };
 
 #define _REENT_INIT(var) \
@@ -711,27 +714,27 @@ struct _reent
     (var)->_new._reent._r48._add = _RAND48_ADD; \
   }
 
-#define _REENT_CHECK_RAND48(ptr)	/* nothing */
-#define _REENT_CHECK_MP(ptr)		/* nothing */
-#define _REENT_CHECK_TM(ptr)		/* nothing */
-#define _REENT_CHECK_ASCTIME_BUF(ptr)	/* nothing */
-#define _REENT_CHECK_EMERGENCY(ptr)	/* nothing */
-#define _REENT_CHECK_MISC(ptr)	        /* nothing */
-#define _REENT_CHECK_SIGNAL_BUF(ptr)	/* nothing */
+#define _REENT_CHECK_RAND48(ptr)    /* nothing */
+#define _REENT_CHECK_MP(ptr)        /* nothing */
+#define _REENT_CHECK_TM(ptr)        /* nothing */
+#define _REENT_CHECK_ASCTIME_BUF(ptr)    /* nothing */
+#define _REENT_CHECK_EMERGENCY(ptr)    /* nothing */
+#define _REENT_CHECK_MISC(ptr)            /* nothing */
+#define _REENT_CHECK_SIGNAL_BUF(ptr)    /* nothing */
 
-#define _REENT_SIGNGAM(ptr)	((ptr)->_new._reent._gamma_signgam)
-#define _REENT_RAND_NEXT(ptr)	((ptr)->_new._reent._rand_next)
-#define _REENT_RAND48_SEED(ptr)	((ptr)->_new._reent._r48._seed)
-#define _REENT_RAND48_MULT(ptr)	((ptr)->_new._reent._r48._mult)
-#define _REENT_RAND48_ADD(ptr)	((ptr)->_new._reent._r48._add)
-#define _REENT_MP_RESULT(ptr)	((ptr)->_result)
-#define _REENT_MP_RESULT_K(ptr)	((ptr)->_result_k)
-#define _REENT_MP_P5S(ptr)	((ptr)->_p5s)
-#define _REENT_MP_FREELIST(ptr)	((ptr)->_freelist)
-#define _REENT_ASCTIME_BUF(ptr)	((ptr)->_new._reent._asctime_buf)
-#define _REENT_TM(ptr)		(&(ptr)->_new._reent._localtime_buf)
-#define _REENT_STRTOK_LAST(ptr)	((ptr)->_new._reent._strtok_last)
-#define _REENT_MBLEN_STATE(ptr)	((ptr)->_new._reent._mblen_state)
+#define _REENT_SIGNGAM(ptr)    ((ptr)->_new._reent._gamma_signgam)
+#define _REENT_RAND_NEXT(ptr)    ((ptr)->_new._reent._rand_next)
+#define _REENT_RAND48_SEED(ptr)    ((ptr)->_new._reent._r48._seed)
+#define _REENT_RAND48_MULT(ptr)    ((ptr)->_new._reent._r48._mult)
+#define _REENT_RAND48_ADD(ptr)    ((ptr)->_new._reent._r48._add)
+#define _REENT_MP_RESULT(ptr)    ((ptr)->_result)
+#define _REENT_MP_RESULT_K(ptr)    ((ptr)->_result_k)
+#define _REENT_MP_P5S(ptr)    ((ptr)->_p5s)
+#define _REENT_MP_FREELIST(ptr)    ((ptr)->_freelist)
+#define _REENT_ASCTIME_BUF(ptr)    ((ptr)->_new._reent._asctime_buf)
+#define _REENT_TM(ptr)        (&(ptr)->_new._reent._localtime_buf)
+#define _REENT_STRTOK_LAST(ptr)    ((ptr)->_new._reent._strtok_last)
+#define _REENT_MBLEN_STATE(ptr)    ((ptr)->_new._reent._mblen_state)
 #define _REENT_MBTOWC_STATE(ptr)((ptr)->_new._reent._mbtowc_state)
 #define _REENT_WCTOMB_STATE(ptr)((ptr)->_new._reent._wctomb_state)
 #define _REENT_MBRLEN_STATE(ptr)((ptr)->_new._reent._mbrlen_state)
@@ -753,17 +756,17 @@ struct _reent
 
 #endif /* !_REENT_SMALL */
 
-#define _REENT_CLEANUP(_ptr)	((_ptr)->__cleanup)
-#define _REENT_CVTBUF(_ptr)	((_ptr)->_cvtbuf)
-#define _REENT_CVTLEN(_ptr)	((_ptr)->_cvtlen)
-#define _REENT_EMERGENCY(_ptr)	((_ptr)->_emergency)
-#define _REENT_ERRNO(_ptr)	((_ptr)->_errno)
-#define _REENT_INC(_ptr)	((_ptr)->_inc)
-#define _REENT_LOCALE(_ptr)	((_ptr)->_locale)
-#define _REENT_SIG_FUNC(_ptr)	((_ptr)->_sig_func)
-#define _REENT_STDIN(_ptr)	((_ptr)->_stdin)
-#define _REENT_STDOUT(_ptr)	((_ptr)->_stdout)
-#define _REENT_STDERR(_ptr)	((_ptr)->_stderr)
+#define _REENT_CLEANUP(_ptr)    ((_ptr)->__cleanup)
+#define _REENT_CVTBUF(_ptr)    ((_ptr)->_cvtbuf)
+#define _REENT_CVTLEN(_ptr)    ((_ptr)->_cvtlen)
+#define _REENT_EMERGENCY(_ptr)    ((_ptr)->_emergency)
+#define _REENT_ERRNO(_ptr)    ((_ptr)->_errno)
+#define _REENT_INC(_ptr)    ((_ptr)->_inc)
+#define _REENT_LOCALE(_ptr)    ((_ptr)->_locale)
+#define _REENT_SIG_FUNC(_ptr)    ((_ptr)->_sig_func)
+#define _REENT_STDIN(_ptr)    ((_ptr)->_stdin)
+#define _REENT_STDOUT(_ptr)    ((_ptr)->_stdout)
+#define _REENT_STDERR(_ptr)    ((_ptr)->_stderr)
 
 #define _REENT_INIT_PTR(var) \
   { memset((var), 0, sizeof(*(var))); \
@@ -791,7 +794,7 @@ extern struct _reent _impure_data __ATTRIBUTE_IMPURE_DATA__;
 
 #if defined(__DYNAMIC_REENT__) && !defined(__SINGLE_THREAD__)
 #ifndef __getreent
-  struct _reent * __getreent (void);
+struct _reent * __getreent (void);
 #endif
 # define _REENT (__getreent())
 #else /* __SINGLE_THREAD__ || !__DYNAMIC_REENT__ */
@@ -900,12 +903,12 @@ extern _Thread_local _mbstate_t _tls_wcsrtombs_state;
 extern struct _atexit *__atexit; /* points to head of LIFO stack */
 extern struct _atexit __atexit0; /* one guaranteed table, required by ANSI */
 
-extern void (*__stdio_exit_handler) (void);
+extern void (*__stdio_exit_handler)(void);
 
-void _reclaim_reent (struct _reent *);
+void _reclaim_reent(struct _reent *);
 
-extern int _fwalk_sglue (struct _reent *, int (*)(struct _reent *, __FILE *),
-			 struct _glue *);
+extern int _fwalk_sglue(struct _reent *, int (*)(struct _reent *, __FILE *),
+                        struct _glue *);
 
 #ifdef __cplusplus
 }

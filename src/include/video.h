@@ -6,7 +6,7 @@
 
 // Set a pixel's color in the framebuffer
 void set_pixel(int x, int y, uint32_t color) {
-    uint32_t* framebuffer = (uint32_t*)FRAMEBUFFER_ADDR;
+    uint32_t *framebuffer = (uint32_t *) FRAMEBUFFER_ADDR;
     framebuffer[y * SCREEN_WIDTH + x] = color;
 }
 

@@ -39,6 +39,7 @@
 #endif
 
 #if MICROPY_USE_READLINE == 0
+
 char *prompt(char *p) {
     // simple read string
     static char buf[256];
@@ -58,11 +59,12 @@ char *prompt(char *p) {
     memcpy(line, buf, l);
     return line;
 }
+
 #endif
 
 void prompt_read_history(void) {
-    #if MICROPY_USE_READLINE_HISTORY
-    #if MICROPY_USE_READLINE == 1
+#if MICROPY_USE_READLINE_HISTORY
+#if MICROPY_USE_READLINE == 1
     readline_init0(); // will clear history pointers
     char *home = getenv("HOME");
     if (home != NULL) {
@@ -95,13 +97,13 @@ void prompt_read_history(void) {
         }
         vstr_clear(&vstr);
     }
-    #endif
-    #endif
+#endif
+#endif
 }
 
 void prompt_write_history(void) {
-    #if MICROPY_USE_READLINE_HISTORY
-    #if MICROPY_USE_READLINE == 1
+#if MICROPY_USE_READLINE_HISTORY
+#if MICROPY_USE_READLINE == 1
     char *home = getenv("HOME");
     if (home != NULL) {
         vstr_t vstr;
@@ -121,6 +123,6 @@ void prompt_write_history(void) {
             close(fd);
         }
     }
-    #endif
-    #endif
+#endif
+#endif
 }

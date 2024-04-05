@@ -8,11 +8,11 @@
 #include <stddef.h>
 //#define NULL ((void*)0)
 
-typedef unsigned short      ushort_t;
-typedef unsigned char       uchar_t;
-typedef unsigned int        uint_t;
-typedef unsigned long       ulong_t;
-typedef unsigned long long  ulonglong_t;
+typedef unsigned short ushort_t;
+typedef unsigned char uchar_t;
+typedef unsigned int uint_t;
+typedef unsigned long ulong_t;
+typedef unsigned long long ulonglong_t;
 
 
 typedef uint32_t mode_t;    // Used for file permissions
@@ -42,7 +42,7 @@ typedef int64_t ssize_t;
 
 #ifndef _SIZE_T
 #  define _SIZE_T
-typedef unsigned long       size_t;
+typedef unsigned long size_t;
 #endif
 
 #endif /* __TYPES_H__ */
