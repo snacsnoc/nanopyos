@@ -69,8 +69,6 @@ extern char _eheap;
 extern char _estack;
 
 
-
-
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
@@ -87,11 +85,6 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     }
 }
 #endif
-
-
-
-
-
 
 
 int mem_test(void) {
@@ -113,8 +106,6 @@ int mem_test(void) {
 }
 
 
-
-
 // wrapper for gc_init with debug prints
 void gc_init_debug(void *start, void *end) {
     if (!start || !end || start >= end) {
@@ -132,6 +123,7 @@ void gc_init_debug(void *start, void *end) {
 // Main entry point: initialise the runtime
 int main(void) {
     printc("Boots\n\n");
+    uart_init();
     mp_stack_ctrl_init();
 
     mp_stack_set_limit(40000 << (BYTES_PER_WORD - 2));
@@ -139,25 +131,25 @@ int main(void) {
     //gc_init(&_sheap, &_eheap);
     gc_init_debug(&_sheap, &_eheap);
     mp_init();
-    print("mp init!\n");
+
     mem_test();
     mp_hal_set_interrupt_char(CHAR_CTRL_C);
     //do_str("print('hello world!', list(x+1 for x in range(10)), end='eol\\n')", MP_PARSE_SINGLE_INPUT);
     //do_str("for i in range(10):\r\n  print(i)", MP_PARSE_FILE_INPUT);
-    #if MICROPY_REPL_EVENT_DRIVEN
-        pyexec_event_repl_init();
-        for (;;) {
-            int c = uart_read_char();
-            if (pyexec_event_repl_process_char(c)) {
-                break;
-            }
+#if MICROPY_REPL_EVENT_DRIVEN
+    pyexec_event_repl_init();
+    for (;;) {
+        int c = uart_receive_char();
+        if (pyexec_event_repl_process_char(c)) {
+            break;
         }
-    #else
-        readline_init0();
+    }
+#else
+    readline_init0();
 
-        pyexec_friendly_repl();
-    #endif
-    //print(">>> ");
+    pyexec_friendly_repl();
+#endif
+    print(">>> ");
     gc_sweep_all();
     mem_test();
     mp_deinit();
