@@ -30,17 +30,28 @@
 #include "bare-arm/system.h"
 
 
-//#define UART4 ((periph_uart_t *) 0x09000000)
-#define UART_BASE ((volatile uint8_t *) 0x09000000)
+
+//volatile uint8_t *uart = (uint8_t *) 0x09000000;
+
+//volatile uint8_t *uart_status = (uint8_t *)0x09000004;
 
 typedef struct {
-    volatile uint32_t SR;
-    volatile uint32_t DR;
+    volatile uint32_t DR;   // Data Register at offset 0x00 from UART_BASE
+    volatile uint32_t SR;   // Status Register at offset 0x04 from UART_BASE
     volatile uint32_t BRR;
     volatile uint32_t CR1;
 } periph_uart_t;
 
-#define UART ((periph_uart_t *)UART_BASE)
+#define UART ((periph_uart_t *)0x09000000)
+
+// Bit masks for the Status Register (SR)
+
+// RXNE: Receive data register not empty
+#define UART_SR_RXNE (1U << 5)
+// TXE: Transmit data register empty
+#define UART_SR_TXE  (1U << 7)
+
+
 
 extern uint64_t _estack, _sidata, _sdata, _edata, _sbss, _ebss, _start;
 
@@ -53,15 +64,96 @@ const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
         (uint64_t) & _start,
 };
 
-// Directly write the character to the UART data register
-void uart_write_char(int c) {
-    *UART_BASE = c;
-}
 
 // Reading a character from UART
 int uart_read_char(void) {
-    // Wait for character to be available in the receive data register
-    while (!(UART->SR & (1 << 5))) {}
-    return (int)(UART->DR);
+    while (!uart_has_data()) {} // Wait for data
+    return (uint32_t)(UART->DR & 0xFF); // Read and return received data
 }
 
+
+
+int mp_hal_stdin_rx_chr(void) {
+    // Wait until data is available
+    while (!uart_has_data()) {
+        // Loop until data becomes available
+    }
+    // Read and return the received data from the data register
+    // Masking with 0xFF ensures we only get the data byte
+    return UART->DR & 0xFF;
+}
+
+
+
+
+// Directly write the character to the UART data register
+void uart_putc(char c) {
+    // Wait for the transmit data register to be empty
+   //while (!(UART->SR & UART_SR_TXE)) {}
+
+    // Write the character to the Data Register
+    UART->DR = (uint32_t)c;
+    //UART->SR &= ~UART_SR_TXE; // Force the TXE flag to a clear state
+    //UART->SR |= UART_SR_TXE; // Force the TXE flag to a set state
+}
+
+void mp_hal_stdout_tx_strn(const char *s) {
+    while (*s != '\0') {
+        uart_putc(*s);
+        s++;
+    }
+}
+
+
+
+
+
+int uart_has_data(void) {
+    return UART->SR & UART_SR_RXNE;
+}
+
+//int uart_has_data_a(void) {
+//    // Check the SR register's RXNE bit to see if data is available.
+//
+//    return (UART->SR & UART_SR_RXNE) != 0;
+//}
+
+
+
+void pputchar(char c) { UART->DR = (uint32_t)c; }
+
+void print(const char *s) {
+    while (*s != '\0') {
+        uart_putc(*s);
+        s++;
+    }
+}
+
+
+// Send string of given length
+void printc(const char *s) {
+    while (*s) {
+        uart_putc(*s++);
+    }
+}
+
+void printc_hex(unsigned long value) {
+    const char hex_chars[] = "0123456789ABCDEF";
+    char buffer[19]; // Long enough for 64-bit hexadecimal + "0x" prefix + null terminator
+    char *buf_ptr = &buffer[18];
+    *buf_ptr = '\0';
+
+    do {
+        *(--buf_ptr) = hex_chars[value % 16];
+        value /= 16;
+    } while (value != 0);
+
+
+    *(--buf_ptr) = 'x';
+    *(--buf_ptr) = '0';
+
+
+    while (*buf_ptr) {
+        uart_putc(*buf_ptr++);
+    }
+}
