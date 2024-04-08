@@ -29,11 +29,20 @@
 #include "shared/runtime/gchelper.h"
 
 #if MICROPY_ENABLE_GC
-
 void gc_collect(void) {
-    gc_collect_start();
-    gc_helper_collect_regs_and_stack();
-    gc_collect_end();
-}
+    extern void *_estack;
+    uintptr_t stack_top = (uintptr_t)&_estack;
 
-#endif // MICROPY_ENABLE_GC
+    // Use inline assembly to get the current stack pointer for ARM64
+    uintptr_t stack_bottom;
+    asm volatile ("mov %0, sp" : "=r" (stack_bottom) ::);
+
+    gc_collect_start();
+    // Be implicit about getting roots from the stack and registers
+    gc_collect_root((void**)&stack_bottom, (stack_top - stack_bottom) / sizeof(mp_uint_t));
+    //gc_helper_collect_regs_and_stack();
+    gc_collect_end();
+    gc_dump_info(&mp_plat_print);
+}
+#endif
+
