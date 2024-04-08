@@ -10,15 +10,15 @@ include $(TOP)/py/py.mk
 
 # Source files
 SRC_DIR := src/ports/bare-arm
-MPY_SRC_DIR := test-build/micropython/py
+
 
 LIB_DIR += test-build/toolchain/aarch64-elf/lib
 
 # Set makefile-level MicroPython feature configurations.
-
+LDSCRIPT = $(SRC_DIR)/linker-mpy.ld
 
 # Define toolchain and other tools.
-CROSS_COMPILE ?= aarch64-elf-
+CROSS_COMPILE = aarch64-elf-
 CC := $(CROSS_COMPILE)gcc
 AS := $(CROSS_COMPILE)as
 LD := $(CROSS_COMPILE)ld
@@ -27,16 +27,20 @@ SIZE := $(CROSS_COMPILE)size
 
 
 # Set the architecture-specific flags
-ARCH_FLAGS := -march=armv8-a -mcpu=cortex-a57
+ARCH_FLAGS := -march=armv8-a -mcpu=cortex-a57 -mtune=cortex-a57
 DFU = $(TOP)/tools/dfu.py
 PYDFU = $(TOP)/tools/pydfu.py
 
 # Set CFLAGS.
-CFLAGS += -Isrc/include -I$(PREFIX)/aarch64-elf/include -Isrc/include/bare-arm -I$(TOP) -I$(BUILD) -I$(TOP)/shared/runtime
+CFLAGS += -Isrc/include -Isrc/include/bare-arm -I$(PREFIX)/aarch64-elf/include  -I$(TOP) -I$(BUILD) -I$(TOP)/shared/runtime
 # For MicroPython REPL
-CFLAGS += -I$(TOP)/shared/readline
+ifeq ($(MICROPY_USE_READLINE),1)
+INC += -I$(TOP)/shared/readline
+CFLAGS += -DMICROPY_USE_READLINE=1
+SHARED_SRC_C_EXTRA += readline/readline.c
+endif
 
-CFLAGS += $(ARCH_FLAGS) -std=c11 -nostdlib #-std=c99 is not compatible with asm, must use __asm__
+CFLAGS += $(ARCH_FLAGS) -std=gnu99 -nostdlib #-std=c99 is not compatible with asm, must use __asm__
 
 # Configure floating point support
 ifeq ($(MICROPY_FLOAT_IMPL),double)
@@ -53,30 +57,33 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -Og -ffreestanding -g -Wall -fno-builtin -fverbose-asm -Werror
 MICROPY_ROM_TEXT_COMPRESSION = 0
 else
-CFLAGS += -O0 -DNDEBUG -ffreestanding
+CFLAGS += -Os -DNDEBUG -ffreestanding
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
 
-
-
 # Set linker flags.
-LDFLAGS += -nostdlib -T $(SRC_DIR)/linker-mpy.ld --gc-sections
+LDFLAGS += -nostdlib -T$(LDSCRIPT) --gc-sections
 LDFLAGS += -static
 
 ASFLAGS := $(ARCH_FLAGS)
 
 
 # Define the required source files.
-SRC_C += $(SRC_DIR)/main.c $(SRC_DIR)/lib.c $(SRC_DIR)/read.c $(SRC_DIR)/system.c $(SRC_DIR)/gccollect.c $(SRC_DIR)/help.c $(SRC_DIR)/../../sys/errno.c
+SRC_C += $(SRC_DIR)/main.c  $(SRC_DIR)/lib.c $(SRC_DIR)/system.c  $(SRC_DIR)/../../sys/errno.c $(SRC_DIR)/gccollect.c
+SRC_C +=   $(SRC_DIR)/help.c #$(SRC_DIR)/input.c   #$(SRC_DIR)/read.c
 
-SRC_C +=   $(TOP)/shared/runtime/pyexec.c $(TOP)/shared/readline/readline.c
-SRC_C +=   $(TOP)/shared/runtime/interrupt_char.c $(TOP)/shared/runtime/stdout_helpers.c
-SRC_C +=   $(TOP)/shared/libc/printf.c $(TOP)/shared/runtime/gchelper_generic.c
+SRC_C +=   $(TOP)/shared/readline/readline.c $(TOP)/shared/runtime/pyexec.c $(TOP)/shared/runtime/stdout_helpers.c  $(TOP)/shared/libc/printf.c
+SRC_C +=    $(TOP)/shared/runtime/gchelper_generic.c
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C)
+#SRC_QSTR +=  $(TOP)/shared/runtime/pyexec.c $(TOP)/shared/readline/readline.c
 
+SRC_QSTR += $(TOP)/shared/readline/readline.c $(TOP)/shared/runtime/pyexec.c
+
+ifeq ($(CROSS), 1)
+SRC_C += $(TOP)/shared/libc/string0.c
+endif
 ifneq ($(FROZEN_MANIFEST),)
 CFLAGS += -DMPZ_DIG_SIZE=16 # force 16 bits to work on both 32 and 64 bit archs
 endif
@@ -104,15 +111,17 @@ endif
 SRC_ASM += $(SRC_DIR)/startup.S
 
 
-#SRC_C += $(TOP)/shared/libc/string0.c
-
-
 # Define the required object files.
 OBJ += $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(LIBM_SRC_C:.c=.o))
 OBJ += $(SRC_ASM:.S=.o)
 
+
+OBJ_RUN =
+OBJ_RUN += $(addprefix $(BUILD)/, $(SRC_RUN_C:.c=.o))
+
+ALL_OBJ_RUN = $(OBJ) $(OBJ_RUN)
 
 # Include remaining core make rules.
 include $(TOP)/py/mkrules.mk
@@ -126,7 +135,7 @@ all: $(BUILD)/firmware.bin
 $(BUILD)/%.o: %.S | $(BUILD)
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(BUILD)/firmware.elf: $(OBJ)
+$(BUILD)/firmware.elf:  $(ALL_OBJ_RUN)
 	$(ECHO) "LINK $@"
 	$(Q)$(LD) $(LDFLAGS) -o $@ $^ -L$(LIB_DIR) -lm
 	$(Q)$(SIZE) $@
