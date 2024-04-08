@@ -57,10 +57,6 @@
 
 const char *text;
 
-// Python heap
-size_t gc_get_max_new_split(void) {
-    return 128 * 1024 * 1024;
-}
 
 extern int main(void) __attribute__((visibility("default")));
 
@@ -68,11 +64,15 @@ extern char _sheap;
 extern char _eheap;
 extern char _estack;
 
-
+/*
 #if MICROPY_ENABLE_COMPILER
-void do_str(const char *src, mp_parse_input_kind_t input_kind) {
+static const char *demo_single_input =
+        "print('hello world!', list(x + 1 for x in range(10)), end='eol\\n')";
+
+static void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0) {
+        // Compile, parse and execute the given string.
         mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
         qstr source_name = lex->source_name;
         mp_parse_tree_t parse_tree = mp_parse(lex, input_kind);
@@ -80,11 +80,12 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
         mp_call_function_0(module_fun);
         nlr_pop();
     } else {
-        // uncaught exception
+        // Uncaught exception: print it out.
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }
 }
 #endif
+*/
 
 
 int mem_test(void) {
@@ -109,37 +110,35 @@ int mem_test(void) {
 // wrapper for gc_init with debug prints
 void gc_init_debug(void *start, void *end) {
     if (!start || !end || start >= end) {
-        print("Invalid heap boundaries.\n");
+        printc("Invalid heap boundaries.\n");
         return;
     }
     gc_init(start, end);
-    print("GC init called with boundaries: Start: ");
+    printc("GC init called with boundaries: Start: ");
     printc_hex((unsigned long) start);
-    print(" End: ");
+    printc(" End: ");
     printc_hex((unsigned long) end);
-    print("\n");
+    printc("\n");
 }
 
 // Main entry point: initialise the runtime
 int main(void) {
     printc("Boots\n\n");
-    uart_init();
+    //uart_init();
     mp_stack_ctrl_init();
 
-    mp_stack_set_limit(40000 << (BYTES_PER_WORD - 2));
+    mp_stack_set_limit(64 * 1024);
 
-    //gc_init(&_sheap, &_eheap);
-    gc_init_debug(&_sheap, &_eheap);
+    gc_init(&_sheap, &_eheap);
+    //gc_init_debug(&_sheap, &_eheap);
     mp_init();
 
-    mem_test();
     mp_hal_set_interrupt_char(CHAR_CTRL_C);
-    //do_str("print('hello world!', list(x+1 for x in range(10)), end='eol\\n')", MP_PARSE_SINGLE_INPUT);
-    //do_str("for i in range(10):\r\n  print(i)", MP_PARSE_FILE_INPUT);
+    //do_str(demo_single_input, MP_PARSE_SINGLE_INPUT);
 #if MICROPY_REPL_EVENT_DRIVEN
     pyexec_event_repl_init();
     for (;;) {
-        int c = uart_receive_char();
+        int c = uart_read_char();
         if (pyexec_event_repl_process_char(c)) {
             break;
         }
@@ -149,9 +148,9 @@ int main(void) {
 
     pyexec_friendly_repl();
 #endif
-    print(">>> ");
+
     gc_sweep_all();
-    mem_test();
+
     mp_deinit();
 
 
@@ -160,7 +159,7 @@ int main(void) {
 
 // Called if an exception is raised outside all C exception-catching handlers.
 void nlr_jump_fail(void *val) {
-    print("nlr jump fail");
+    printc("nlr jump fail");
     for (;;) {
     }
 }
@@ -173,7 +172,7 @@ mp_import_stat_t mp_import_stat(const char *path) {
 
 // There is no filesystem so opening a file raises an exception.
 mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
-    mp_raise_OSError(MP_ENOENT);
+    return 0;
 }
 
 
