@@ -6,7 +6,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
-//#define NULL ((void*)0)
+
+#ifndef _USECONDS_T_DEFINED
+#define _USECONDS_T_DEFINED
+typedef unsigned int useconds_t;
+#endif
 
 typedef unsigned short ushort_t;
 typedef unsigned char uchar_t;
