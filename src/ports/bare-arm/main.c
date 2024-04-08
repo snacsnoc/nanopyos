@@ -36,7 +36,6 @@
 #include <unistd.h>
 #endif
 
-#include "bare-arm/input.h"
 #include "bare-arm/mphalport.h"
 #include "bare-arm/mpconfigport.h"
 #include "bare-arm/system.h"
