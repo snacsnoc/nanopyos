@@ -23,16 +23,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "bare-arm/system.h"
-
-// Simulated UART status flags
-volatile bool uart_txe_simulated = true; // Assume TXE is initially true (ready to send)
-volatile bool uart_rxne_simulated = false; // RXNE initially false (no data to read)
-
 
 typedef struct {
     volatile uint32_t DR;   // Data Register at offset 0x00 from UART_BASE
@@ -40,15 +34,10 @@ typedef struct {
     volatile uint32_t BRR;
     volatile uint32_t CR1;
 
-    // Simulated functions for setting/getting status flags
-    void (*set_txe)(bool state);
-
-    void (*set_rxne)(bool state);
 } periph_uart_t;
 
 #define UART ((periph_uart_t *)0x09000000)
 
-// Bit masks for the Status Register (SR)
 
 // RXNE: Receive data register not empty
 #define UART_SR_RXNE (1U << 5)
@@ -56,7 +45,7 @@ typedef struct {
 #define UART_SR_TXE  (1U << 7)
 
 
-extern uint64_t _estack, _sidata, _sdata, _edata, _sbss, _ebss, _start;
+extern uint64_t _estack, _start;
 
 void main(void);
 
@@ -67,48 +56,21 @@ const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
         (uint64_t) & _start,
 };
 
-// Simulated RXNE and TXE
-void uart_set_txe_simulated(bool state) {
-    uart_txe_simulated = state;
-}
 
-void uart_set_rxne_simulated(bool state) {
-    uart_rxne_simulated = state;
-}
 
-// Initializing the UART structure with simulated functions
+// Init UART structures
 void uart_init() {
     printc("\n\ninit uart flags\n\n");
-    UART->set_txe = uart_set_txe_simulated;
-    UART->set_rxne = uart_set_rxne_simulated;
 }
 
-// Simulated UART send character function
-void uart_send_char(char c) {
-    while (!uart_txe_simulated) {
-        // Wait for TXE to be ready to send
-        printc("waiting for data\n");
-    }
-    UART->DR = (uint32_t) c;
-    // Simulate the TXE flag being cleared after sending a character
-    UART->set_txe(false);
-    // Simulate the TXE flag being set again (ready for next character)
-    UART->set_txe(true);
+// Write a character out to the UART.
+void uart_write_char(int c) {
+    // Wait for TXE, then write the character.
+//    while ((UART4->SR & (1 << 7)) == 0) {
+//    }
+    UART->DR = (uint64_t)c;
 }
 
-// Simulated UART receive character function
-char uart_receive_char() {
-    UART->set_rxne(true);
-    printc("init waiting....\n");
-    while (!uart_rxne_simulated) {
-        printc("waiting for data\n");
-        continue;
-    }
-    //char receivedChar = (char) UART->DR; // Read char from data register
-    // Simulate the RXNE flag being cleared after reading a character
-    UART->set_rxne(false);
-    return (char) UART->DR;
-}
 
 // Reading a character from UART
 int uart_read_char(void) {
@@ -117,37 +79,14 @@ int uart_read_char(void) {
 }
 
 
+// Receive single character
 int mp_hal_stdin_rx_chr(void) {
-    // Wait until data is available
-    while (!(UART->SR & UART_SR_RXNE)) {
-
-        continue; // Wait while the receive data register is empty.
-    }
-    return (int) (UART->DR & 0xFF); // Read the received character.
-}
-
-void debug_print(const char *message, uint32_t value) {
-    printf("%s: 0x%X\n", message, value);
-}
-
-
-// Directly write the character to the UART data register
-void uart_putc(char c) {
-
-    // Wait for the transmit data register to be empty
-    //while (!(UART->SR & UART_SR_TXE)) {}
-
-    // Write the character to the Data Register
-    UART->DR = (uint32_t) c;
-    UART->SR &= ~UART_SR_TXE; // Force the TXE flag to a clear state
-    UART->SR |= UART_SR_TXE; // Force the TXE flag to a set state
-}
-
-void mp_hal_stdout_tx_strn(const char *s) {
-    while (*s != '\0') {
-        pputchar(*s);
-        s++;
-    }
+    unsigned char c = 0;
+#if MICROPY_MIN_USE_STDOUT
+    int r = read(STDIN_FILENO, &c, 1);
+    (void)r;
+#endif
+    return c;
 }
 
 
@@ -155,24 +94,14 @@ int uart_has_data(void) {
     return UART->SR & UART_SR_RXNE;
 }
 
-
-void pputchar(char c) { UART->DR = (uint32_t) c; }
-
-void print(const char *s) {
+void printc(const char *s) {
     while (*s != '\0') {
 
-        uart_send_char(*s);
+        uart_write_char(*s);
         s++;
     }
 }
 
-
-// Send string of given length
-void printc(const char *s) {
-    while (*s) {
-        pputchar(*s++);
-    }
-}
 
 void printc_hex(unsigned long value) {
     const char hex_chars[] = "0123456789ABCDEF";
@@ -191,6 +120,18 @@ void printc_hex(unsigned long value) {
 
 
     while (*buf_ptr) {
-        pputchar(*buf_ptr++);
+        uart_write_char(*buf_ptr++);
+    }
+}
+
+
+
+// Send string of given length to stdout, converting \n to \r\n.
+void mp_hal_stdout_tx_strn(const char *str, size_t len) {
+    while (len--) {
+        if (*str == '\n') {
+            uart_write_char('\r');
+        }
+        uart_write_char(*str++);
     }
 }
