@@ -64,7 +64,7 @@ extern char _sheap;
 extern char _eheap;
 extern char _estack;
 
-/*
+
 #if MICROPY_ENABLE_COMPILER
 static const char *demo_single_input =
         "print('hello world!', list(x + 1 for x in range(10)), end='eol\\n')";
@@ -85,7 +85,7 @@ static void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     }
 }
 #endif
-*/
+
 
 
 int mem_test(void) {
@@ -134,7 +134,7 @@ int main(void) {
     mp_init();
 
     mp_hal_set_interrupt_char(CHAR_CTRL_C);
-    //do_str(demo_single_input, MP_PARSE_SINGLE_INPUT);
+    do_str(demo_single_input, MP_PARSE_SINGLE_INPUT);
 #if MICROPY_REPL_EVENT_DRIVEN
     pyexec_event_repl_init();
     for (;;) {
