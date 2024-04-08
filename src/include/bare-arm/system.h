@@ -7,12 +7,6 @@
 #define CHAR_CTRL_C (3)
 #endif
 
-void uart_write_char(int c);
-
-int uart_read_char(void);
-
-int uart_has_data(void);
-
 void mp_hal_stdout_tx_strn(const char *, long unsigned int);
 
 int mp_hal_stdin_rx_chr(void);
