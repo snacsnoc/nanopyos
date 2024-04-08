@@ -27,23 +27,32 @@
 #include <stdio.h>
 #include <string.h>
 #include "bare-arm/system.h"
+#define UART_BASE 0x09000000
 
 typedef struct {
     volatile uint32_t DR;   // Data Register at offset 0x00 from UART_BASE
-    volatile uint32_t SR;   // Status Register at offset 0x04 from UART_BASE
-    volatile uint32_t BRR;
-    volatile uint32_t CR1;
+    volatile uint32_t _reserved0[5]; // Reserved space
+    volatile uint32_t FR;   // Flag Register at offset 0x018 from UART_BASE
+    volatile uint32_t _reserved1[1]; // Reserved space
+    volatile uint32_t IBRD; // Integer Baud Rate Register at offset 0x024
+    volatile uint32_t FBRD; // Fractional Baud Rate Register at offset 0x028
+    volatile uint32_t LCR;  // Line Control Register at offset 0x02c
+    volatile uint32_t CR;   // Control Register at offset 0x030
+    volatile uint32_t _reserved2[1]; // Reserved space
+    volatile uint32_t IMSC; // Interrupt Mask Set/Clear Register at offset 0x038
+    volatile uint32_t _reserved3[2]; // Reserved space
+    volatile uint32_t DMACR; // DMA Control Register at offset 0x048
 
 } periph_uart_t;
+// https://developer.arm.com/documentation/ddi0183/g/programmers-model/summary-of-registers
+#define UART ((periph_uart_t *)UART_BASE)
 
-#define UART ((periph_uart_t *)0x09000000)
-
-
-// RXNE: Receive data register not empty
-#define UART_SR_RXNE (1U << 5)
-// TXE: Transmit data register empty
-#define UART_SR_TXE  (1U << 7)
-
+// Receive FIFO Empty
+#define UARTFR_RXFE (1U << 4)
+// Transmit FIFO Full
+#define UARTFR_TXFF (1U << 5)
+// UART Busy
+#define UARTFR_BUSY (1U << 3)
 
 extern uint64_t _estack, _start;
 
@@ -62,20 +71,29 @@ const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
 void uart_init() {
     printc("\n\ninit uart flags\n\n");
 }
+// Check if UART is ready to send data
+static int uart_can_send(void) {
+    // Transmit FIFO not full and UART not busy
+    return !(UART->FR & (UARTFR_TXFF | UARTFR_BUSY));
+}
 
 // Write a character out to the UART.
 void uart_write_char(int c) {
-    // Wait for TXE, then write the character.
-//    while ((UART4->SR & (1 << 7)) == 0) {
-//    }
+    // Wait for TXFF, then write the character.
+    while (!uart_can_send()) {} // Wait for transmitter to be ready
     UART->DR = (uint64_t)c;
 }
+static int uart_has_data(void) {
+    // Receive FIFO not empty
+    return !(UART->FR & UARTFR_RXFE);
+}
+
 
 
 // Reading a character from UART
 int uart_read_char(void) {
     while (!uart_has_data()) {} // Wait for data
-    return (uint32_t)(UART->DR & 0xFF); // Read and return received data
+    return UART->DR & 0xFF; // Read and return received data
 }
 
 
@@ -90,9 +108,7 @@ int mp_hal_stdin_rx_chr(void) {
 }
 
 
-int uart_has_data(void) {
-    return UART->SR & UART_SR_RXNE;
-}
+
 
 void printc(const char *s) {
     while (*s != '\0') {
