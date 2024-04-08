@@ -35,24 +35,15 @@ extern char _sheap; // Start of heap
 extern char _eheap; // End of heap
 
 
-void *malloc(size_t n) {
-    static char *cur_heap = NULL;
-    char *prev_heap;
+char* heap_ptr;
 
-    if (cur_heap == NULL) {
-        cur_heap = &_sheap;
-    }
+void* malloc(size_t n) {
+    if(heap_ptr + n > &_eheap)
+        return NULL;
 
-    // Check if allocating n bytes will exceed the heap area
-    if (cur_heap + n > &_eheap) {
-        // Allocation exceeds heap area
-        return NULL; // Failed allocation
-    }
-
-    // Proceed with allocation
-    prev_heap = cur_heap;
-    cur_heap += (n + 7) & ~7; // Align to 8-byte boundary
-    return prev_heap;
+    void* result = heap_ptr;
+    heap_ptr += (n + 7) & ~7;
+    return result;
 }
 
 void *realloc(void *ptr, size_t size) {
