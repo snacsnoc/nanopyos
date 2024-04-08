@@ -34,6 +34,7 @@
 extern char _sheap; // Start of heap
 extern char _eheap; // End of heap
 
+#define SIZE_MASK 7
 
 char* heap_ptr;
 
@@ -46,12 +47,23 @@ void* malloc(size_t n) {
     return result;
 }
 
-void *realloc(void *ptr, size_t size) {
-    void *ptr2 = malloc(size);
-    if (ptr && size) {
-        memcpy(ptr2, ptr, size); // size may be greater than ptr's region, do copy anyway
+void* realloc(void* ptr, size_t new_size) {
+
+    if(!ptr) return malloc(new_size);
+
+    size_t original_size = *((size_t*)ptr) & SIZE_MASK;
+
+    if(new_size <= original_size)
+        return ptr;
+
+    void* new_ptr = malloc(new_size);
+
+    if(new_ptr) {
+        *((size_t*)new_ptr) = new_size;
+        return new_ptr;
     }
-    return ptr2;
+
+    return NULL;
 }
 
 void free(void *p) {
