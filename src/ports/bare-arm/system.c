@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "bare-arm/system.h"
+
 #define UART_BASE 0x09000000
 
 typedef struct {
@@ -66,11 +67,11 @@ const uint64_t isr_vector[] __attribute__((section(".isr_vector"))) = {
 };
 
 
-
 // Init UART structures
 void uart_init() {
     printc("\n\ninit uart flags\n\n");
 }
+
 // Check if UART is ready to send data
 static int uart_can_send(void) {
     // Transmit FIFO not full and UART not busy
@@ -78,16 +79,16 @@ static int uart_can_send(void) {
 }
 
 // Write a character out to the UART.
-void uart_write_char(int c) {
+static void uart_write_char(int c) {
     // Wait for TXFF, then write the character.
     while (!uart_can_send()) {} // Wait for transmitter to be ready
-    UART->DR = (uint64_t)c;
+    UART->DR = (uint64_t) c;
 }
-static int uart_has_data(void) {
+
+int uart_has_data(void) {
     // Receive FIFO not empty
     return !(UART->FR & UARTFR_RXFE);
 }
-
 
 
 // Reading a character from UART
@@ -106,8 +107,6 @@ int mp_hal_stdin_rx_chr(void) {
 #endif
     return c;
 }
-
-
 
 
 void printc(const char *s) {
@@ -139,7 +138,6 @@ void printc_hex(unsigned long value) {
         uart_write_char(*buf_ptr++);
     }
 }
-
 
 
 // Send string of given length to stdout, converting \n to \r\n.
