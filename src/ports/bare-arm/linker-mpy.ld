@@ -55,7 +55,7 @@ SECTIONS
     /* Stack Section */
     .stack : {
         . += 64K;
-        . = ALIGN(16);
+        . = ALIGN(8);
     } > RAM
 
     /* Provide _estack symbol for the startup code */
