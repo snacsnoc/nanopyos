@@ -86,7 +86,6 @@ static void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 #endif
 
 
-
 int mem_test(void) {
     printc("Heap start: ");
     printc_hex((unsigned long) &_sheap);
