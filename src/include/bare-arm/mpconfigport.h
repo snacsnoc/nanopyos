@@ -27,22 +27,15 @@
 #include <stdint.h>
 #include "sys/types.h"
 
-#define MICROPY_BANNER_MACHINE "CustomMachine"
+#define MICROPY_BANNER_MACHINE "NanoPyOS"
 #define MICROPY_HW_BOARD_NAME "minimal"
 #define MICROPY_HW_MCU_NAME "unknown-cpu"
 
-#ifndef MICROPY_PY_SYS_PLATFORM
-#if defined(__APPLE__) && defined(__MACH__)
-#define MICROPY_PY_SYS_PLATFORM  "darwin"
-#else
-#define MICROPY_PY_SYS_PLATFORM  "linux"
-#endif
-#endif
 
 #define MP_STATE_PORT MP_STATE_VM
 
-// Enable all common features (large/external flash, rp2, unix)
-#define MICROPY_CONFIG_ROM_LEVEL_FULL_FEATURES (40)
+// Enable most common features
+#define MICROPY_CONFIG_ROM_LEVEL_BASIC_FEATURES (20)
 
 // Compiler configuration
 #define MICROPY_ENABLE_COMPILER                 (1)
@@ -59,12 +52,12 @@
 #define MICROPY_MALLOC_USES_ALLOCATED_SIZE (1)
 #define MICROPY_PY_EXEC             (1)
 #define MICROPY_MEM_STATS           (1)
-#define MICROPY_ENABLE_GC           (1)
-#define MICROPY_PY_GC               (1)
+#define MICROPY_ENABLE_GC           (0)
+#define MICROPY_PY_GC               (0)
 
 
 #define MICROPY_MIN_USE_STDOUT (1)
-#define MICROPY_HEAP_SIZE      (25600) // heap size 25 kilobytes
+#define MICROPY_HEAP_SIZE (256 * 1024 ) // 256 kilobytes
 
 
 #define MICROPY_REPL_INFO           (1)
@@ -73,8 +66,9 @@
 #define MICROPY_HELPER_REPL         (1)
 
 #define MICROPY_NLR_AARCH64 (1)
+//#define MICROPY_EMIT_ARM            (1)
 
-
+#define MICROPY_PY_SYS_PLATFORM     "qemu-arm"
 
 
 //#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
@@ -85,10 +79,10 @@
 #define MICROPY_INCLUDED_LIB_UTILS_INTERRUPT_CHAR_H (1)
 
 
-#define MICROPY_REPL_EVENT_DRIVEN (1)
+#define MICROPY_REPL_EVENT_DRIVEN (0)
 
 
-#define MICROPY_USE_READLINE        (0)
+#define MICROPY_USE_READLINE        (1)
 #define MICROPY_USE_READLINE_HISTORY (0)
 
 
@@ -103,8 +97,6 @@
 #define MICROPY_PY_BUILTINS_HELP_TEXT nanopyos_help_text
 #define MICROPY_VFS                 (0)
 
-//#define MICROPY_NLR_SETJMP (1)
-
 #define MICROPY_PY_ASYNC_AWAIT                  (0)
 #define MICROPY_PY_BUILTINS_SET                 (1)
 #define MICROPY_PY_ATTRTUPLE                    (1)
@@ -114,8 +106,6 @@
 #define MICROPY_PY_STRUCT                       (1)
 //#define MICROPY_PY_SYS_EXECUTABLE (1)
 
-// TESTING
-
 // Disable stackless by default.
 #ifndef MICROPY_STACKLESS
 #define MICROPY_STACKLESS           (0)
@@ -123,26 +113,26 @@
 #endif
 #define MICROPY_GC_STACK_ENTRY_TYPE uint64_t
 
-// Bare-metal ports don't have stderr. Printing debug to stderr may give tests
-// which check stdout a chance to pass, etc.
-//#define MICROPY_DEBUG_PRINTER (&mp_stderr_print)
-//#define MICROPY_ERROR_PRINTER (&mp_stderr_print)
-
-
-
-// Type definitions for the specific machine
-typedef int64_t mp_int_t;
-typedef uint64_t mp_uint_t;
-typedef long mp_off_t;
-
 
 #define MICROPY_PORT_ROOT_POINTERS \
-const char *readline_hist[8];
+    const char *readline_hist[8]; \
+    \
+    mp_obj_t pyb_hid_report_desc; \
+    \
+    mp_obj_t pyb_config_main; \
+    \
+    mp_obj_t pyb_switch_callback; \
+    \
+    mp_obj_t pin_class_mapper; \
+    mp_obj_t pin_class_map_dict; \
+    \
+    mp_obj_t pyb_extint_callback[PYB_EXTI_NUM_VECTORS]; \
+    \
+    struct _soft_timer_entry_t *soft_timer_heap;
+
 // Need to provide a declaration/definition of alloca()
 #include <alloca.h>
 
-#ifndef __APPLE__
+
 // For debugging purposes, make printf() available to any source file.
 #include <stdio.h>
-
-#endif
