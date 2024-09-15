@@ -9,29 +9,39 @@ First, set up the toolchain required for cross-compilation.
 
 ```
 mkdir -p test-build/toolchain
-cd build
+```
+Build directory for source packages:
+```
+mkdir build-dir/
 ```
 
-
+Toolchain will be installed to `test-build/toolchain`:
 ```bash
-export PREFIX=/PATH/build/toolchain
+export PREFIX=/PATH/test-build/toolchain
 export TARGET=aarch64-elf
 export PATH=$PREFIX/bin:$PATH
 ```
 #### Linux
 ```bash
+sudo apt-get install gcc-12 g++-12
 export CC=/usr/local/bin/gcc-12
 export CXX=/usr/local/bin/g++-12
 export LD=/usr/local/bin/gcc-12
 ```
 #### Mac
 ```bash
+brew install gcc@12
 export CC=/opt/homebrew/bin/gcc-12
 export CXX=/opt/homebrew/bin/g++-12
 export LD=/opt/homebrew/bin/gcc-12
 ```
 
 
+Enter the source directory:
+
+```bash
+cd build-dir/
+```
 
 ## Build binutils
 ```bash
@@ -41,6 +51,7 @@ tar xvf binutils-2.42.tar.xz
 Build out of tree:
 
 ```bash
+cd binutils-2.42/
 mkdir build && cd build 
 
 ../configure --prefix=$PREFIX --target=$TARGET --disable-nls --disable-multilib --disable-werror
@@ -63,7 +74,7 @@ cd gcc-12.3.0
 ### get mpfr, gmp and mpc
 `bash ./contrib/download_prerequisites`
 
-### gmp (extra)
+### gmp (extra, not necessary to build the toolchain)
 ```bash
 cd gmp
 mkdir build && cd build
@@ -73,7 +84,7 @@ make
 make install
 ```
 
-### mpfr (extra)
+### mpfr (extra, not necessary to build the toolchain)
 ```bash
 cd mpfr
 mkdir build && cd build
@@ -99,8 +110,8 @@ make install-target-libgcc
 
 ```bash
 wget ftp://sourceware.org/pub/newlib/newlib-4.4.0.20231231.tar.gz
-tar xvf newlib
-cd newlib
+tar xvf newlib-4.4.0.20231231.tar.gz 
+cd newlib-4.4.0.20231231
 ./configure --prefix=$PREFIX --target=$TARGET --disable-multilib
 make
 make install
@@ -115,7 +126,7 @@ Note: this installs to `$PREFIX/$TARGET`
 Clone the MicroPython repository:
 
 ```bash
-mkdir test-build && test-build
+cd test-build
 git clone https://github.com/micropython/micropython.git
 ```
 
